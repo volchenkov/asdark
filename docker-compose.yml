@@ -46,8 +46,8 @@ services:
     environment:
       MYSQL_DATABASE: asdark
       MYSQL_USER: asdark 
-      MYSQL_PASSWORD: 1q2w3e4r
-      MYSQL_ROOT_PASSWORD: volchenkov4dk
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:

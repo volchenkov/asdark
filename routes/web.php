@@ -52,3 +52,13 @@ Route::get('/vk_auth_callback', function (Request $request) {
 
     return response('OK', 200);
 });
+
+Route::get('/vk_credentials', function(Request $request) {
+    $secret = $request->query('secret');
+
+    if (!$secret || $secret !== env('VK_CREDENTIALS_SECRET')) {
+        abort(403, 'Access denied');
+    }
+
+    return file_get_contents('vk_credentials.json');
+});

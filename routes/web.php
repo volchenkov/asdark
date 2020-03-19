@@ -45,8 +45,8 @@ Route::get('/vk_auth_callback', function (Request $request) {
     ];
     $r = (new GuzzleHttp\Client())->get('https://oauth.vk.com/access_token', ['query' => $query]);
 
-    file_put_contents('vk_credentials.json', (string) $r->getBody());
-    if ($status = $r->getStatusCode() >= 400) {
+    $writen = file_put_contents('vk_credentials.json', (string) $r->getBody());
+    if ($writen = false || $status = $r->getStatusCode() >= 400) {
         return response("NOTOK: {$r->getStatusCode()}", 500);
     }
 

@@ -8,6 +8,7 @@ use \GuzzleHttp\Client;
 
 class VkOauthController extends BaseController
 {
+
     public function form()
     {
         $query = [

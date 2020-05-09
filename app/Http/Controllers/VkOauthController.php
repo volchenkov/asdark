@@ -12,7 +12,7 @@ class VkOauthController extends BaseController
     {
         $query = [
             'client_id'     => env('VK_CLIENT_ID'),
-            'redirect_uri'  => env('VK_AUTH_CALLBACK_URL'),
+            'redirect_uri'  => env('APP_URL').'/vk_auth_callback',
             'display'       => 'page',
             'scope'         => '65536',
             'response_type' => 'code',
@@ -27,20 +27,18 @@ class VkOauthController extends BaseController
         if ($error = $request->query('error')) {
             return response("{$error}: {$request->query('error_description')}", 400);
         }
-
-        $code = $request->query('code');
-
+        $http = new Client();
         $query = [
             'client_id'     => env('VK_CLIENT_ID'),
             'client_secret' => env('VK_CLIENT_SECRET'),
-            'redirect_uri'  => env('VK_AUTH_CALLBACK_URL'),
-            'code'          => $code
+            'redirect_uri'  => env('APP_URL').'/vk_auth_callback',
+            'code'          => $request->query('code')
         ];
-        $r = (new Client())->get('https://oauth.vk.com/access_token', ['query' => $query]);
+        $rsp = $http->get('https://oauth.vk.com/access_token', ['query' => $query]);
 
-        $ok = file_put_contents('vk_credentials.json', (string)$r->getBody());
-        if ($ok == false || $status = $r->getStatusCode() >= 400) {
-            return response("NOTOK: {$r->getStatusCode()} {$r->getBody()->getContents()}", 500);
+        $ok = file_put_contents('vk_credentials.json', (string)$rsp->getBody());
+        if ($ok == false || $status = $rsp->getStatusCode() >= 400) {
+            return response("NOTOK: {$rsp->getStatusCode()} {$rsp->getBody()->getContents()}", 500);
         }
 
         return response('OK', 200);

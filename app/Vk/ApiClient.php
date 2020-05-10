@@ -17,7 +17,7 @@ class ApiClient
     private ?string $clientId;
     private Client $http;
 
-    public function __construct(string $account, string $accessToken, ?string $clientId = null)
+    private function __construct(string $account, string $accessToken, ?string $clientId = null)
     {
         $this->account = $account;
         $this->accessToken = $accessToken;
@@ -26,6 +26,16 @@ class ApiClient
             'base_uri' => 'https://api.vk.com/method/',
             'timeout'  => 10.0
         ]);
+    }
+
+    public static function instance()
+    {
+        $creds = json_decode(file_get_contents(getenv('VK_CREDENTIALS_FILE')), true);
+        if (!$creds) {
+            throw new \RuntimeException('Invalid VK credentials');
+        }
+
+        return new self($creds['account'], $creds['access_token'], $creds['client_id']);
     }
 
     public function getCampaigns()

@@ -41,11 +41,11 @@ class VkExportAds extends Command
      */
     public function handle()
     {
-        $creds = json_decode(file_get_contents(base_path().'/vk_creds.json'), true);
-        $vk = new ApiClient($creds['account'], $creds['access_token'], $creds['client_id']);
+        $vk = ApiClient::instance();
 
         /**
-         * Expected fields
+         * Expected fields:
+         *
          * ad_format,
          * campaign_id,
          * ad_name,

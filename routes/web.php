@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\VkOauthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +17,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/vk_auth', VkOauthController::class.'@form');
-Route::get('/vk_auth_callback', VkOauthController::class.'@callback');
+Route::get('/vk_auth', 'VkOauthController@form');
+Route::get('/vk_auth_callback', 'VkOauthController@callback');
+Route::get('/cds_form', 'CdsController@form');
+Route::get('/cds_generate', 'CdsController@generate');
+Route::get('/cds_confirm_export', 'CdsController@confirmExport');
+Route::get('/cds_start_export', 'CdsController@startExport');
 

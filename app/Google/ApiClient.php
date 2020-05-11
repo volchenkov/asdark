@@ -50,13 +50,9 @@ class ApiClient
 
     public function getPendingOperation(): ?array
     {
-        $googleSheets = new \Google_Service_Sheets($this->getClient());
-        $range = $googleSheets->spreadsheets_values->get(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
-        $rows = $range->getValues();
-        $headers = array_shift($rows);
+        $rows = $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
 
-        foreach ($rows as $i => $row) {
-            $operation = array_combine($headers, $row + array_fill(0, count($headers), null));
+        foreach ($rows as $i => $operation) {
             if ($operation['status'] == 'new') {
                 return array_replace(['id' => $i + 2 /* start from 1 + headers row */], $operation);
             }
@@ -65,13 +61,12 @@ class ApiClient
         return null;
     }
 
-    public function getCells(string $spreadsheetId, string $range)
+    public function getCells(string $spreadsheetId, string $range): array
     {
         $googleSheets = new \Google_Service_Sheets($this->getClient());
         $range = $googleSheets->spreadsheets_values->get($spreadsheetId, $range);
         $values = $range->getValues();
         $headers = array_shift($values);
-
 
         $rows = [];
         foreach ($values as $i => $cols) {
@@ -84,19 +79,24 @@ class ApiClient
 
     public function updateOperationStatus(int $operationId, string $status)
     {
+        $this->writeCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'C'.$operationId, [
+            [(new \DateTime())->format('Y-m-d H:i:s'), $status]
+        ]);
+    }
+
+    public function writeCells(string $spreadsheetId, string $range, array $data)
+    {
         $googleSheets = new \Google_Service_Sheets($this->getClient());
 
         $values = new \Google_Service_Sheets_ValueRange();
-        $values->setRange('C'.$operationId);
-        $values->setValues([[
-            (new \DateTime())->format('Y-m-d H:i:s'),
-            $status
-        ]]);
+        $values->setRange($range);
+        $values->setValues($data);
+
         $request = new \Google_Service_Sheets_BatchUpdateValuesRequest();
         $request->setValueInputOption('RAW');
         $request->setData($values);
 
-        $googleSheets->spreadsheets_values->batchUpdate(getenv('OPERATIONS_SPREADSHEET_ID'), $request);
+        $googleSheets->spreadsheets_values->batchUpdate($spreadsheetId, $request);
     }
 
     private function getClient(): \Google_Client

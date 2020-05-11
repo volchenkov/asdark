@@ -4,6 +4,7 @@
 <div class="row">
     <div class="col-12">
         <p>Внесите ID документа, по которому будут загружены объявления. Одна строка - одно объявление.</p>
+        <p>Список объявлений должен быть на листе Sheet1</p>
     </div>
 </div>
 <form action="/cds_start_export" method="POST">

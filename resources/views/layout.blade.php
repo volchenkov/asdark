@@ -19,15 +19,26 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-12 pt-4">
+                            @if($vkAccount)
                             <a href="/cds_form" class="text-white mr-3">Генератор ЦДС</a>
                             <a href="/cds_confirm_export" class="text-white mr-3">Новая загрузка</a>
                             <a href="/exports" class="text-white mr-3">Загрузки</a>
+                            @endif
+                            <a href="/vk_auth" class="text-white mr-3">Подключение ВК</a>
                         </div>
+                        @if($vkAccount)
                         <div class="col-12 py-2">
                             <p class="text-muted">
-                                Подключен VK: <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}
+                                Подключен ВК: <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}
                             </p>
                         </div>
+                        @else
+                        <div class="col-12 py-2">
+                            <p class="text-muted">
+                                ВК не подлючен
+                            </p>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

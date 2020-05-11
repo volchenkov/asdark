@@ -37,12 +37,10 @@ class VkOauthController extends BaseController
         ];
         $rsp = $http->get('https://oauth.vk.com/access_token', ['query' => $query]);
 
-        $ok = file_put_contents('vk_credentials.json', (string)$rsp->getBody());
-        if ($ok == false || $status = $rsp->getStatusCode() >= 400) {
-            return response("NOTOK: {$rsp->getStatusCode()} {$rsp->getBody()->getContents()}", 500);
-        }
-
-        return response('OK', 200);
+        return view('vk-auth-result', [
+            'ok'         => $status = $rsp->getStatusCode() < 400,
+            'vkResponse' => $rsp->getBody()->getContents()
+        ]);
     }
 
 }

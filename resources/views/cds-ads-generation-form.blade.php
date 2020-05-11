@@ -145,13 +145,15 @@
                    placeholder="OCPM"
                    value="300" />
         </div>
-        <div class="col-md-12 form-check">
-            <input type="checkbox"
-                   name="autobidding"
-                   id="autobidding"
-                   checked
-                   class="form-check-input" />
-            <label for="autobidding" class="form-check-label">Автоуправление ценой</label>
+        <div class="col-12">
+            <div class="form-check">
+                <input type="checkbox"
+                       name="autobidding"
+                       id="autobidding"
+                       checked
+                       class="form-check-input" />
+                <label for="autobidding" class="form-check-label">Автоуправление ценой</label>
+            </div>
         </div>
     </div>
     <div class="row mt-4 mb-5">

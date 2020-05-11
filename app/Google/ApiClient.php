@@ -82,10 +82,10 @@ class ApiClient
         return $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
     }
 
-    public function updateOperationStatus(int $operationId, string $status)
+    public function updateOperationStatus(int $operationId, string $status, ?string $cause = null)
     {
         $this->writeCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'C'.$operationId, [
-            [(new \DateTime())->format('Y-m-d H:i:s'), $status]
+            [(new \DateTime())->format('Y-m-d H:i:s'), $status, (string) $cause]
         ]);
     }
 

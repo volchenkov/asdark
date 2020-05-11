@@ -46,6 +46,9 @@ class VkExportAds extends Command
      */
     protected $description = 'Export ads sheet to VK';
 
+    private GoogleApiClient $google;
+    private VkApiClient $vk;
+
     /**
      * Create a new command instance.
      *
@@ -54,6 +57,8 @@ class VkExportAds extends Command
     public function __construct()
     {
         parent::__construct();
+        $this->google = new GoogleApiClient();
+        $this->vk = VkApiClient::instance();
     }
 
     /**
@@ -63,32 +68,42 @@ class VkExportAds extends Command
      */
     public function handle()
     {
-        $google = new GoogleApiClient();
-        $operation = $google->getPendingOperation();
+        $operation = $this->google->getPendingOperation();
         if (!$operation) {
             $this->line('Nothing to do');
             return;
         }
-        $google->updateOperationStatus($operation['id'], 'processing');
+        try {
+            $this->google->updateOperationStatus($operation['id'], 'processing');
+            $errors = $this->exportAds($operation);
+            $this->google->updateOperationStatus($operation['id'], $errors ? 'done_with_errors' : 'done');
+        } catch (\Throwable $e) {
+            $this->google->updateOperationStatus($operation['id'], 'failed');
+        }
 
+        return;
+    }
+
+    private function exportAds(array $operation): int
+    {
         $spreadsheetId = $operation['spreadsheetId'] ?? null;
         if (!$spreadsheetId) {
             throw new \RuntimeException('Spreadsheet ID is undefined');
         }
 
         $sheetTitle = 'Sheet1';
-        $ads = $google->getCells($spreadsheetId, $sheetTitle);
+        $ads = $this->google->getCells($spreadsheetId, $sheetTitle);
 
         if (count($ads) == 0) {
             $this->line('No ads to export');
-            return;
+            return 0;
         }
 
         // add result columns if not exists
         $headers = array_keys(array_replace($ads[0], $this->makeAdResults('whatever')));
-        $google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
+        $this->google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
 
-        $vk = VkApiClient::instance();
+        $errors = 0;
         foreach ($ads as $i => $data) {
             $createdAlready = ($data['asdark:export_status'] ?? null) === 'created';
             if ($createdAlready) {
@@ -119,7 +134,7 @@ class VkExportAds extends Command
 
 
             try {
-                $adId = $vk->createAd($ad);
+                $adId = $this->vk->createAd($ad);
                 $status = 'created';
                 $error = null;
             } catch (\Exception $e) {
@@ -127,22 +142,21 @@ class VkExportAds extends Command
                 $status = 'failed';
                 $error = $e->getMessage();
 
+                $errors++;
                 error_log('Failed to handle ad row: ' . $e->getMessage());
             } finally {
                 $result = array_replace($data, $this->makeAdResults($status, $adId, $error));
                 try {
                     $row = $i + 2;
                     $range = "{$sheetTitle}!{$row}:{$row}";
-                    $google->writeCells($spreadsheetId, $range , [array_values($result)]);
+                    $this->google->writeCells($spreadsheetId, $range , [array_values($result)]);
                 } catch (\Exception $e) {
                     error_log('Failed to update ad row: ' . $e->getMessage());
                 }
             }
         }
 
-        $google->updateOperationStatus($operation['id'], 'done');
-
-        return;
+        return $errors;
     }
 
     private function makeAdResults(string $status, ?int $adId = null, ?string $error = null)

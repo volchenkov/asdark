@@ -18,7 +18,7 @@
                 <td><a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a></td>
                 <td>{{ $export['created_at'] }}</td>
                 <td>{{ $export['updated_at'] }}</td>
-                <td class="text-center table-{{ ['done' => 'success'][$export['status']] ?? 'danger'}}">{{ $export['status'] }}</td>
+                <td class="text-center table-{{ ['done' => 'success', 'done_with_errors' => 'warning'][$export['status']] ?? 'danger'}}">{{ $export['status'] }}</td>
             </tr>
             @endforeach
 

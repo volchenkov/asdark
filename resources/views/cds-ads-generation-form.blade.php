@@ -29,6 +29,15 @@
                 @endforeach
             </select>
         </div>
+        <div class="col-md-8 form-group">
+            <label for="promo_name">Spreadsheet ID таргетингов</label>
+            <input name="targetings_sid"
+                   id="targetings_sid"
+                   type="text"
+                   placeholder="Spreadsheet ID"
+                   class="form-control"
+                   required/>
+        </div>
     </div>
 
     <div class="row">

@@ -20,13 +20,22 @@ class CdsController extends BaseController
 
     public function generate(Request $request)
     {
+        $google = new GoogleApiClient();
         $now = (new \DateTime())->format('Y-m-d H:i:s');
         $promo = $request->input('promo_name');
-        $targetings = [
-            ['name' => 'тар1', 'cities' => [1, 2], 'country' => 1],
-            ['name' => 'тар2', 'cities' => [1], 'country' => 1],
-            ['name' => 'тар3', 'cities' => [2], 'country' => 1],
-        ];
+
+        $targetings = [];
+        foreach ($google->getCells($request->input('targetings_sid'), 'Sheet1') as $targeting) {
+            $requiredFields = ['name', 'cities', 'country'];
+            if ($diff = array_diff($requiredFields, array_keys($targeting))) {
+                $msg = "<p>Required targeting fields missed:<b>".implode(',', $diff)."</b>.</p>";
+                $msg.= "<p>Please, add columns to targetings table and try again</p>";
+
+                return response($msg);
+            }
+
+            $targetings[] = $targeting;
+        }
 
         $ads = [];
         foreach ($request->input('campaign_ids') as $campaignId) {
@@ -48,7 +57,7 @@ class CdsController extends BaseController
                     'cpm'               => '',
                     'cpc'               => '',
                     'category1_id'      => $request->input('category1_id'),
-                    'targeting_cities'  => implode(',', $targeting['cities']),
+                    'targeting_cities'  => $targeting['cities'],
                     'targeting_country' => $targeting['country'],
                     'post_link_button'  => $request->input('link_button'),
                     'post_link_image'   => $request->input('creative'),
@@ -69,7 +78,7 @@ class CdsController extends BaseController
 
         $title = "asdark - объявления для ВК {$now} {$promo}";
         $permission = new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone']);
-        $spreadsheet = (new GoogleApiClient())->createSpreadSheet($title, $rows, $permission);
+        $spreadsheet = $google->createSpreadSheet($title, $rows, $permission);
 
         return redirect()->action('CdsController@confirmExport', ['sid' => $spreadsheet->getSpreadsheetId()]);
     }

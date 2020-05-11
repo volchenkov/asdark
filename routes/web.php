@@ -22,5 +22,6 @@ Route::get('/vk_auth_callback', 'VkOauthController@callback');
 Route::get('/cds_form', 'CdsController@form');
 Route::get('/cds_generate', 'CdsController@generate');
 Route::get('/cds_confirm_export', 'CdsController@confirmExport');
-Route::get('/cds_start_export', 'CdsController@startExport');
+Route::post('/cds_start_export', 'CdsController@startExport');
+Route::get('/cds_export_started', 'CdsController@exportStarted');
 

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Vk\ApiClient;
+use App\Vk\ApiClient as VkApiClient;
+use App\Google\ApiClient as GoogleApiClient;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 
@@ -11,8 +12,8 @@ class CdsController extends BaseController
 
     public function form()
     {
-        $campaigns = ApiClient::instance()->getCampaigns();
-        usort($campaigns, fn($a, $b) => strcmp($a["name"], $b["name"]));
+        $campaigns = VkApiClient::instance()->getCampaigns();
+        usort($campaigns, fn ($a, $b) => strcmp($a["name"], $b["name"]));
 
         return view('cds-ads-generation-form', ['campaigns' => $campaigns]);
     }
@@ -22,7 +23,7 @@ class CdsController extends BaseController
         $now = (new \DateTime())->format('Y-m-d H:i:s');
         $promo = $request->input('promo_name');
         $targetings = [
-            ['name' => 'тар1', 'cities' => [1,2], 'country' => 1],
+            ['name' => 'тар1', 'cities' => [1, 2], 'country' => 1],
             ['name' => 'тар2', 'cities' => [1], 'country' => 1],
             ['name' => 'тар3', 'cities' => [2], 'country' => 1],
         ];
@@ -39,7 +40,7 @@ class CdsController extends BaseController
                     'ad_format'         => $request->input('ad_format'),
                     'campaign_id'       => $campaignId,
                     'ad_name'           => $name,
-                    'ad_autobidding'    => filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
+                    'ad_autobidding'    => (int)filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
                     'goal_type'         => $request->input('goal_type'),
                     'cost_type'         => $request->input('cost_type'),
                     'ocpm'              => $request->input('ocpm'),
@@ -64,54 +65,37 @@ class CdsController extends BaseController
         foreach ($ads as $ad) {
             $rows[] = array_values($ad);
         }
-        $spreadsheet = $this->uploadSheet("asdark - объявления для ВК {$now} {$promo}", $rows);
 
-        return redirect()->action('CdsController@confirmExport', ['r' => $spreadsheet->getSpreadsheetUrl()]);
+        $title = "asdark - объявления для ВК {$now} {$promo}";
+        $permission = new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone']);
+        $spreadsheet = (new GoogleApiClient())->createSpreadSheet($title, $rows, $permission);
+
+        return redirect()->action('CdsController@confirmExport', ['sid' => $spreadsheet->getSpreadsheetId()]);
     }
 
     public function confirmExport(Request $request)
     {
-        return view('cds-confirm-export', ['resource' => $request->input('r')]);
+        return view('cds-confirm-export', ['spreadsheetId' => $request->input('sid')]);
     }
 
     public function startExport(Request $request)
     {
-        return view('cds-export-started', ['resource' => $request->input('spreadsheet')]);
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $operation = [
+            'spreadsheetId' => $request->input('spreadsheetId'),
+            'created_at'    => $now,
+            'updated_at'    => $now,
+            'status'        => 'new',
+        ];
+        $google = new GoogleApiClient();
+        $google->appendRow(getenv('OPERATIONS_SPREADSHEET_ID'), $operation);
+
+        return redirect()->action('CdsController@exportStarted', ['spreadsheetId' => $operation['spreadsheetId']]);
     }
 
-    private function uploadSheet(string $title, array $grid): \Google_Service_Sheets_Spreadsheet
+    public function exportStarted(Request $request)
     {
-        $client = new \Google_Client();
-        $client->setApplicationName('ASDARK');
-        $client->setAuthConfig(getenv('GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_FILE'));
-        $client->addScope(\Google_Service_Sheets::SPREADSHEETS);
-        $client->addScope(\Google_Service_Sheets::DRIVE);
-        $client->setAccessType('offline');
-        $client->setPrompt('select_account consent');
-
-        $spreadsheet = new \Google_Service_Sheets_Spreadsheet(['properties' => ['title' => $title]]);
-
-        $googleSheets = new \Google_Service_Sheets($client);
-        $spreadsheetCreated = $googleSheets->spreadsheets->create($spreadsheet, [
-            'fields' => implode(',', ['spreadsheetId', 'spreadsheetUrl'])
-        ]);
-
-        $valueRange = new \Google_Service_Sheets_ValueRange();
-        $valueRange->setValues($grid);
-        $valueRange->setRange('A1');
-        $body = new \Google_Service_Sheets_BatchUpdateValuesRequest();
-        $body->setData($valueRange);
-        $body->setValueInputOption('RAW');
-        $googleSheets->spreadsheets_values->batchUpdate($spreadsheetCreated->getSpreadsheetId(), $body);
-
-        $permission = new \Google_Service_Drive_Permission();
-        $permission->role = 'writer';
-        $permission->type = 'anyone';
-
-        $googleDrive = new \Google_Service_Drive($client);
-        $googleDrive->permissions->create($spreadsheetCreated->getSpreadsheetId(), $permission);
-
-        return $spreadsheetCreated;
+        return view('cds-export-started', ['spreadsheetId' => $request->input('spreadsheetId')]);
     }
 
 }

@@ -1,10 +1,9 @@
 @extends('layout')
 
 @section('content')
-<div class="row mt-5">
+<div class="row">
     <div class="col-md-8">
         <p>После отправки формы будет сгенерирована Google таблица, которую можно будет поправить и отправить на загрузку в ВК.</p>
-        <p>Одна строка в таблице = одно созданное объявление.</p>
     </div>
 </div>
 <form action="/cds_generate">

@@ -6,8 +6,30 @@ use App\Vk\Ad;
 use App\Vk\AdTargeting;
 use App\Vk\WallPostStealth;
 use Illuminate\Console\Command;
-use \App\Vk\ApiClient;
+use \App\Vk\ApiClient as VkApiClient;
+use \App\Google\ApiClient as GoogleApiClient;
 
+/**
+ * Expected feed fields:
+ *
+ * ad_format,
+ * campaign_id,
+ * ad_name,
+ * ad_autobidding,
+ * goal_type,
+ * cost_type,
+ * ocpm,
+ * cpm,
+ * cpc,
+ * category1_id,
+ * targeting_cities,
+ * targeting_country,
+ * post_link_button,
+ * post_link_image,
+ * post_message,
+ * post_attachments,
+ * post_owner_id
+ */
 class VkExportAds extends Command
 {
     /**
@@ -41,43 +63,25 @@ class VkExportAds extends Command
      */
     public function handle()
     {
-        $vk = ApiClient::instance();
-
-        /**
-         * Expected fields:
-         *
-         * ad_format,
-         * campaign_id,
-         * ad_name,
-         * ad_autobidding,
-         * goal_type,
-         * cost_type,
-         * ocpm,
-         * cpm,
-         * cpc,
-         * category1_id,
-         * targeting_cities,
-         * targeting_country,
-         * post_link_button,
-         * post_link_image,
-         * post_message,
-         * post_attachments,
-         * post_owner_id
-         */
-        $feed = storage_path().'/ads_feed.csv';
-
-        $h = fopen($feed, "r");
-        if ($h === false) {
-            throw new \RuntimeException('Failed to open feed file');
+        $google = new GoogleApiClient();
+        $operation = $google->getPendingOperation();
+        if (!$operation) {
+            $this->line('Nothing to do');
+            return;
         }
-        $headers = fgetcsv($h);
-        if (!$headers) {
-            throw new \RuntimeException('No headers found');
+        $google->updateOperationStatus($operation['id'], 'processing');
+
+        $spreadsheetId = $operation['spreadsheetId'] ?? null;
+        if (!$spreadsheetId) {
+            throw new \RuntimeException('Spreadsheet ID is undefined');
         }
-        while (($cols = fgetcsv($h)) !== false) {
+
+        $feed = $google->getCells($spreadsheetId, 'Sheet1');
+
+        $vk = VkApiClient::instance();
+
+        foreach ($feed as $data) {
             try {
-                $data = array_combine($headers, $cols);
-
                 $adTargeting = new AdTargeting();
                 $adTargeting->country = $data['targeting_country'];
                 $adTargeting->cities = explode(',', $data['targeting_cities']);
@@ -91,7 +95,7 @@ class VkExportAds extends Command
 
                 $ad = new Ad($data['ad_format'], $data['campaign_id']);
                 $ad->name = $data['ad_name'];
-                $ad->autobidding = $data['ad_autobidding'];
+                $ad->autobidding = (int)$data['ad_autobidding'];
                 $ad->goalType = $data['goal_type'];
                 $ad->costType = $data['cost_type'];
                 $ad->ocpm = $data['ocpm'];
@@ -106,7 +110,8 @@ class VkExportAds extends Command
                 error_log('Failed to handle feed row: '.$e->getMessage());
             }
         }
-        fclose($h);
+
+        $google->updateOperationStatus($operation['id'], 'done');
 
         return;
     }

@@ -29,8 +29,8 @@ class CdsController extends BaseController
         ];
 
         $ads = [];
-        foreach ($targetings as $targeting) {
-            foreach ($request->input('campaign_ids') as $campaignId) {
+        foreach ($request->input('campaign_ids') as $campaignId) {
+            foreach ($targetings as $targeting) {
                 $name = str_replace(
                     ['{promo}', '{targeting_name}'],
                     [$promo, $targeting['name']],
@@ -40,9 +40,10 @@ class CdsController extends BaseController
                     'ad_format'         => $request->input('ad_format'),
                     'campaign_id'       => $campaignId,
                     'ad_name'           => $name,
-                    'ad_autobidding'    => (int)filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
                     'goal_type'         => $request->input('goal_type'),
                     'cost_type'         => $request->input('cost_type'),
+                    'ad_autobidding'    => (int)filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
+                    'day_limit'         => $request->input('day_limit'),
                     'ocpm'              => $request->input('ocpm'),
                     'cpm'               => '',
                     'cpc'               => '',

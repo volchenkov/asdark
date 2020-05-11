@@ -25,7 +25,7 @@
                 </td>
                 <td>{{ $export['created_at'] }}</td>
                 <td>{{ $export['updated_at'] }}</td>
-                <td class="text-center table-{{ ['new' => 'info', 'done' => 'success', 'done_with_errors' => 'warning'][$export['status']] ?? 'danger'}}">{{ $export['status'] }}</td>
+                <td class="text-center table-{{ ['done' => 'success', 'done_with_errors' => 'warning', 'failed' => 'danger'][$export['status']] ?? 'info'}}">{{ $export['status'] }}</td>
             </tr>
             @endforeach
 

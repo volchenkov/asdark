@@ -119,7 +119,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-3 form-group">
+        <div class="col-md-2 form-group">
             <label for="goal_type">Цель</label>
             <select name="goal_type"
                     id="goal_type"
@@ -128,7 +128,7 @@
                 <option value="3">Заявки</option>
             </select>
         </div>
-        <div class="col-md-3 form-group">
+        <div class="col-md-2 form-group">
             <label for="cost_type">Способ оплаты</label>
             <select name="cost_type"
                     id="cost_type"
@@ -138,23 +138,34 @@
             </select>
         </div>
         <div class="col-md-2 form-group">
-            <label for="cost_type">CPM, руб.</label>
+            <label for="ocpm">oCPM, руб.</label>
             <input name="ocpm"
+                   id="ocpm"
                    type="number"
                    class="form-control"
+                   title="Желаемая стоимость заявки"
                    placeholder="OCPM"
                    value="300" />
         </div>
-        <div class="col-12">
-            <div class="form-check">
-                <input type="checkbox"
-                       name="autobidding"
-                       id="autobidding"
-                       checked
-                       class="form-check-input" />
-                <label for="autobidding" class="form-check-label">Автоуправление ценой</label>
-            </div>
+        <div class="col-md-2 form-group">
+            <label for="day_limit">Дневной лимит, руб.</label>
+            <input name="day_limit"
+                   id="day_limit"
+                   type="number"
+                   class="form-control"
+                   placeholder="Дневной лимит"
+                   value="300" />
         </div>
+{{--        <div class="col-12">--}}
+{{--            <div class="form-check" title="Изменение этой настройки сейчас не поддерживается">--}}
+{{--                <input type="checkbox"--}}
+{{--                       name="autobidding"--}}
+{{--                       id="autobidding"--}}
+{{--                       disabled--}}
+{{--                       class="form-check-input" />--}}
+{{--                <label for="autobidding" class="form-check-label">Автоуправление ценой</label>--}}
+{{--            </div>--}}
+{{--        </div>--}}
     </div>
     <div class="row mt-4 mb-5">
         <div class="col-12">

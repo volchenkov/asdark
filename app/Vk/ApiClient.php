@@ -85,6 +85,7 @@ class ApiClient
             'category1_id' => $ad->category1Id,
             'country'      => $ad->targeting->country,
             'cities'       => implode(',', $ad->targeting->cities),
+            'day_limit'    => $ad->dayLimit,
         ];
         if ($ad->costType === Ad::COST_TYPE_CLICKS) {
             $fields['cpc'] = $ad->cpc;

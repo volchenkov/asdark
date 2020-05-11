@@ -18,6 +18,7 @@ use \App\Google\ApiClient as GoogleApiClient;
  * ad_autobidding,
  * goal_type,
  * cost_type,
+ * day_limit
  * ocpm,
  * cpm,
  * cpc,
@@ -124,10 +125,11 @@ class VkExportAds extends Command
             $ad = new Ad($data['ad_format'], $data['campaign_id']);
             $ad->name = $data['ad_name'];
             $ad->autobidding = (int)$data['ad_autobidding'];
-            $ad->goalType = $data['goal_type'];
-            $ad->costType = $data['cost_type'];
+            $ad->goalType = (int)$data['goal_type'];
+            $ad->costType = (int)$data['cost_type'];
             $ad->ocpm = $data['ocpm'];
             $ad->category1Id = $data['category1_id'];
+            $ad->dayLimit = $data['day_limit'];
 
             $ad->targeting = $adTargeting;
             $ad->post = $post;

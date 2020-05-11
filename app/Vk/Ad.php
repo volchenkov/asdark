@@ -25,6 +25,7 @@ class Ad
     public float $cpm;
     public float $cpc;
     public float $ocpm;
+    public float $dayLimit;
     public int $category1Id;
     public WallPostStealth $post;
     public AdTargeting $targeting;

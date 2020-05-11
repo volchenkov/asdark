@@ -38,6 +38,16 @@ class ApiClient
         return new self($creds['account'], $creds['access_token'], $creds['client_id']);
     }
 
+    public function getClientId(): ?string
+    {
+        return $this->clientId;
+    }
+
+    public function getAccount(): ?string
+    {
+        return $this->account;
+    }
+
     public function getCampaigns()
     {
         return $this->get('ads.getCampaigns');

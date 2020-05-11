@@ -18,10 +18,15 @@
             <div class="collapse bg-dark" id="navbarHeader">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12 py-4">
+                        <div class="col-12 pt-4">
                             <a href="/cds_form" class="text-white mr-3">Генератор ЦДС</a>
                             <a href="/cds_confirm_export" class="text-white mr-3">Новая загрузка</a>
                             <a href="/exports" class="text-white mr-3">Загрузки</a>
+                        </div>
+                        <div class="col-12 py-2">
+                            <p class="text-muted">
+                                Подключен VK: <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -20,6 +20,7 @@
                     <div class="row">
                         <div class="col-12 py-4">
                             <a href="/cds_form" class="text-white mr-3">Генератор ЦДС</a>
+                            <a href="/cds_confirm_export" class="text-white mr-3">Новая загрузка</a>
                             <a href="/exports" class="text-white mr-3">Загрузки</a>
                         </div>
                     </div>
@@ -27,7 +28,13 @@
             </div>
             <div class="navbar navbar-dark bg-dark shadow-sm">
                 <div class="container d-flex justify-content-between">
-                    <a href="/" class="navbar-brand d-flex align-items-center">
+                    <a href="/"
+                       data-toggle="collapse"
+                       data-target="#navbarHeader"
+                       aria-controls="navbarHeader"
+                       aria-expanded="false"
+                       aria-label="Toggle navigation"
+                       class="navbar-brand d-flex align-items-center">
                         <strong>ASDARK</strong>
                     </a>
                     <button class="navbar-toggler"

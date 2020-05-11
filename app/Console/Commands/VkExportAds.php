@@ -78,7 +78,7 @@ class VkExportAds extends Command
             $errors = $this->exportAds($operation);
             $this->google->updateOperationStatus($operation['id'], $errors ? 'done_with_errors' : 'done');
         } catch (\Throwable $e) {
-            $this->google->updateOperationStatus($operation['id'], 'failed');
+            $this->google->updateOperationStatus($operation['id'], 'failed', $e->getMessage());
         }
 
         return;

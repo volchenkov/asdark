@@ -15,7 +15,14 @@
             <tbody>
             @foreach($exports as $export)
             <tr>
-                <td><a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a></td>
+                <td>
+                    <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
+                    @if(!in_array($export['status'], ['new', 'done']))
+                        <div class="my-2">
+                            <a href="/cds_confirm_export?sid={{ $export['spreadsheetId'] }}"><button type="button" class="btn btn-outline-secondary btn-sm">повторить</button></a>
+                        </div>
+                    @endif
+                </td>
                 <td>{{ $export['created_at'] }}</td>
                 <td>{{ $export['updated_at'] }}</td>
                 <td class="text-center table-{{ ['new' => 'info', 'done' => 'success', 'done_with_errors' => 'warning'][$export['status']] ?? 'danger'}}">{{ $export['status'] }}</td>

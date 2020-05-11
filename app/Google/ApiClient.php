@@ -77,6 +77,11 @@ class ApiClient
         return $rows;
     }
 
+    public function getOperations(): array
+    {
+        return $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
+    }
+
     public function updateOperationStatus(int $operationId, string $status)
     {
         $this->writeCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'C'.$operationId, [

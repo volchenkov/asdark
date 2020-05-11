@@ -19,7 +19,8 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-12 py-4">
-                            <a href="/cds_form" class="text-white">Генератор акционных объявлений ВК</a>
+                            <a href="/cds_form" class="text-white mr-3">Генератор ЦДС</a>
+                            <a href="/exports" class="text-white mr-3">Загрузки</a>
                         </div>
                     </div>
                 </div>

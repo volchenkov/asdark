@@ -24,4 +24,5 @@ Route::get('/cds_generate', 'CdsController@generate');
 Route::get('/cds_confirm_export', 'CdsController@confirmExport');
 Route::post('/cds_start_export', 'CdsController@startExport');
 Route::get('/cds_export_started', 'CdsController@exportStarted');
+Route::get('/exports', 'ExportsController@list');
 

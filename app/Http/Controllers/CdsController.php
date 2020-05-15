@@ -80,32 +80,7 @@ class CdsController extends BaseController
         $permission = new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone']);
         $spreadsheet = $google->createSpreadSheet($title, $rows, $permission);
 
-        return redirect()->action('CdsController@confirmExport', ['sid' => $spreadsheet->getSpreadsheetId()]);
-    }
-
-    public function confirmExport(Request $request)
-    {
-        return view('cds-confirm-export', ['spreadsheetId' => $request->input('sid')]);
-    }
-
-    public function startExport(Request $request)
-    {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $operation = [
-            'spreadsheetId' => $request->input('spreadsheetId'),
-            'created_at'    => $now,
-            'updated_at'    => $now,
-            'status'        => 'new',
-        ];
-        $google = new GoogleApiClient();
-        $google->appendRow(getenv('OPERATIONS_SPREADSHEET_ID'), $operation);
-
-        return redirect()->action('CdsController@exportStarted', ['spreadsheetId' => $operation['spreadsheetId']]);
-    }
-
-    public function exportStarted(Request $request)
-    {
-        return view('cds-export-started', ['spreadsheetId' => $request->input('spreadsheetId')]);
+        return redirect()->action('ExportsController@confirm', ['sid' => $spreadsheet->getSpreadsheetId()]);
     }
 
 }

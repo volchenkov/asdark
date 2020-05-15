@@ -7,7 +7,7 @@
         <p>Список объявлений должен быть на листе Sheet1</p>
     </div>
 </div>
-<form action="/cds_start_export" method="POST">
+<form action="/exports_start" method="POST">
     @csrf
     <div class="row">
         <div class="col-10 form-group">

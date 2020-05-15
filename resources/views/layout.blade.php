@@ -17,28 +17,24 @@
         <header>
             <div class="collapse bg-dark" id="navbarHeader">
                 <div class="container">
-                    <div class="row">
-                        <div class="col-12 pt-4">
-                            @if($vkAccount)
-                            <a href="/cds_form" class="text-white mr-3">Генератор ЦДС</a>
-                            <a href="/cds_confirm_export" class="text-white mr-3">Новая загрузка</a>
-                            <a href="/exports" class="text-white mr-3">Загрузки</a>
-                            @endif
-                            <a href="/vk_auth" class="text-white mr-3">Подключение ВК</a>
-                        </div>
+                    <div class="row pt-4">
                         @if($vkAccount)
-                        <div class="col-12 py-2">
-                            <p class="text-muted">
-                                Подключен ВК: <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}
-                            </p>
+                        <div class="col-12 my-1">
+                            <a href="/exports_confirm" class="text-white mr-3">Новая загрузка</a>
+                            <a href="/exports" class="text-white mr-3">Загрузки</a>
                         </div>
-                        @else
-                        <div class="col-12 py-2">
-                            <p class="text-muted">
-                                ВК не подлючен
-                            </p>
+                        <div class="col-12 mb-3">
+                            <a href="/cds_form" class="small text-white mr-3">Создание объявлений ЦДС</a>
+                            <a href="/ads_edit_form" class="small text-white mr-3">Редактирование объявлений</a>
                         </div>
                         @endif
+
+                        <div class="col-12 my-2">
+                            <a href="/vk_auth" class="text-white">Подключить ВК</a>
+                            @if($vkAccount)
+                            <span class="text-muted"> - сейчас подключен <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

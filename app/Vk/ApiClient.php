@@ -58,17 +58,17 @@ class ApiClient
         return $this->get('ads.getAds', ['campaign_ids' => json_encode($campaignIds)]);
     }
 
-    public function getAdsTargeting(array $adIds)
+    public function getAdsTargeting(array $adIds): array
     {
         return $this->get('ads.getAdsTargeting', ['ad_ids' => json_encode($adIds)]);
     }
 
-    public function getAdsLayout(array $adIds)
+    public function getAdsLayout(array $adIds): array
     {
         return $this->get('ads.getAdsLayout', ['ad_ids' => json_encode($adIds)]);
     }
 
-    public function getWallPosts($posts)
+    public function getWallPosts(array $posts): array
     {
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }

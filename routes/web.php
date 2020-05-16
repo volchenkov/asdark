@@ -29,3 +29,5 @@ Route::get('/exports_started', 'ExportsController@started');
 Route::get('/exports', 'ExportsController@list');
 
 
+Route::get('/ads_edit_form', 'AdsEditController@form');
+Route::get('/ads_edit_generate', 'AdsEditController@generate');

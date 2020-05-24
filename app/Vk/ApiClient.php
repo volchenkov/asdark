@@ -112,11 +112,13 @@ class ApiClient
         if (!$ads) {
             return [];
         }
-        $campaignFields = [
-            AdsFeed::COL_CAMPAIGN_NAME,
-        ];
-        $needCampaigns = count(array_intersect($campaignFields, $fields)) > 0;
-        if ($needCampaigns) {
+
+        $layouts = $this->getAdsLayout(array_keys($ads));
+        foreach ($layouts as $layout) {
+            $ads[$layout['id']]['layout'] = $layout;
+        }
+
+        if (AdsFeed::dependsOn('campaign', $fields)) {
             $campaigns = [];
             foreach ($this->getCampaigns() as $campaign) {
                 $campaigns[$campaign['id']] = $campaign;
@@ -127,19 +129,8 @@ class ApiClient
             }
         }
 
-        $postFields = [
-            AdsFeed::COL_POST_LINK_IMAGE,
-            AdsFeed::COL_POST_TEXT,
-            AdsFeed::COL_POST_OWNER_ID,
-            AdsFeed::COL_POST_ID,
-        ];
-        $needPosts = count(array_intersect($postFields, $fields)) > 0;
-        if ($needPosts) {
-            $layouts = $this->getAdsLayout(array_keys($ads));
-            foreach ($layouts as $layout) {
-                $ads[$layout['id']]['layout'] = $layout;
-            }
 
+        if (AdsFeed::dependsOn('post', $fields)) {
             $adPostIds = [];
             foreach ($ads as $ad) {
                 $adPostIds[$ad['id']] = preg_replace('/^http(s)?:\/\/vk.com\/wall/', '', $ad['layout']['link_url'] ?? '');
@@ -245,9 +236,29 @@ class ApiClient
         return $rsp['post_id'];
     }
 
-    public function updateAd(array $ad)
+    public function updateAd(array $ad, array $currentState)
     {
-        $this->editWallPost($ad);
+        $fields = [
+            'ad_id' => $ad[AdsFeed::COL_AD_ID],
+        ];
+        if (isset($ad[AdsFeed::COL_AD_NAME])) {
+            $fields['name'] = $ad[AdsFeed::COL_AD_NAME];
+        }
+
+        if (AdsFeed::dependsOn('post', $ad)) {
+            $this->editWallPost(array_replace($currentState, $ad));
+        }
+
+        if (AdsFeed::dependsOn('ad', $ad)) {
+            $rsp = $this->get('ads.updateAds', ['data' => json_encode([$fields])]);
+
+            if (isset($rsp[0]['error_desc'])) {
+                throw new \RuntimeException('Failed to update ad: '.json_encode($rsp));
+            }
+
+        }
+
+        return 'OK';
     }
 
     private function editWallPost($post)

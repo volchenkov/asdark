@@ -80,6 +80,7 @@ class VkExportAds extends Command
             $errors = $this->exportAds($operation);
             $this->google->updateOperationStatus($operation['id'], $errors ? 'done_with_errors' : 'done');
         } catch (\Throwable $e) {
+            error_log('Failed export ads: ' . $e->getMessage());
             $this->google->updateOperationStatus($operation['id'], 'failed', $e->getMessage());
         }
 
@@ -117,8 +118,7 @@ class VkExportAds extends Command
             try {
                 $adId = $data[AdsFeed::COL_AD_ID] ?? null;
                 if ($adId) {
-                    $updatedState = array_replace($currentState[$adId], $data);
-                    $this->vk->updateAd($updatedState);
+                    $this->vk->updateAd($data, $currentState[$adId]);
                 } else {
                     $adTargeting = new AdTargeting();
                     $adTargeting->country = $data['targeting_country'];

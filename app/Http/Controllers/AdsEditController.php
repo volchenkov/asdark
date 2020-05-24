@@ -37,7 +37,7 @@ class AdsEditController extends BaseController
             AdsFeed::COL_AD_ID,
             AdsFeed::COL_AD_NAME,
         ];
-        $feed = $vk->getFeed(array_column($ads, 'id'), array_merge($defaultCols, $adFields));
+        $feed = $vk->getFeed(array_column($ads, 'id'), array_unique(array_merge($defaultCols, $adFields)));
         usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 
         $headers = array_keys(array_values($feed)[0]);
@@ -46,9 +46,12 @@ class AdsEditController extends BaseController
 
         $google = new GoogleApiClient();
         $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $title = "asdark - редактирование объявлений ВК {$now}";
-        $permission = new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone']);
-        $spreadsheet = $google->createSpreadSheet($title, $rows, $permission);
+
+        $spreadsheet = $google->createSpreadSheet(
+            "asdark - редактирование объявлений ВК {$now}",
+            $rows,
+            new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone'])
+        );
 
         return redirect()->action('ExportsController@confirm', ['sid' => $spreadsheet->getSpreadsheetId()]);
     }

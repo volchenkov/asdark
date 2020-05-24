@@ -187,7 +187,7 @@ class ApiClient
             'cities'       => $ad[AdsFeed::COL_AD_TARGETING_CITIES],
             'day_limit'    => $ad[AdsFeed::COL_AD_DAY_LIMIT],
         ];
-        if ($ad[AdsFeed::COL_COST_TYPE] === self::AD_COST_TYPE_OPTIMIZED_VIEWS) {
+        if ($ad[AdsFeed::COL_COST_TYPE] == self::AD_COST_TYPE_OPTIMIZED_VIEWS) {
             $fields['ocpm'] = $ad[AdsFeed::COL_AD_OCPM];
         }
         if (AdsFeed::dependsOn('post', array_keys($ad))) {

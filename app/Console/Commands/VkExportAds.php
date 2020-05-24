@@ -7,6 +7,7 @@ use App\Vk\AdTargeting;
 use App\Vk\WallPostStealth;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
+use \App\Vk\AdsFeed;
 use \App\Google\ApiClient as GoogleApiClient;
 
 /**
@@ -93,54 +94,63 @@ class VkExportAds extends Command
         }
 
         $sheetTitle = 'Sheet1';
-        $ads = $this->google->getCells($spreadsheetId, $sheetTitle);
+        $feed = $this->google->getCells($spreadsheetId, $sheetTitle);
 
-        if (count($ads) == 0) {
+        if (count($feed) == 0) {
             $this->line('No ads to export');
             return 0;
         }
 
         // add result columns if not exists
-        $headers = array_keys(array_replace($ads[0], $this->makeAdResults('whatever')));
+        $headers = array_keys(array_replace($feed[0], $this->makeAdResults('whatever')));
         $this->google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
 
         $errors = 0;
-        foreach ($ads as $i => $data) {
-            $createdAlready = ($data['asdark:export_status'] ?? null) === 'created';
-            if ($createdAlready) {
+        $adIds = array_filter(array_map(fn($ad) => $ad[AdsFeed::COL_AD_ID] ?? null, $feed));
+        $currentState = $this->vk->getFeed($adIds, array_keys(AdsFeed::FIELDS));
+        foreach ($feed as $i => $data) {
+            $done = ($data['asdark:export_status'] ?? null) === 'done';
+            if ($done) {
                 continue;
             }
 
-            $adTargeting = new AdTargeting();
-            $adTargeting->country = $data['targeting_country'];
-            $adTargeting->cities = explode(',', $data['targeting_cities']);
-
-            $post = new WallPostStealth($data['post_owner_id']);
-            $post->linkButton = $data['post_link_button'];
-            $post->linkImage = $data['post_link_image'];
-            $post->message = $data['post_message'];
-            $post->guid = uniqid('stealth_post');
-            $post->attachments = explode(',', $data['post_attachments']);
-
-            $ad = new Ad($data['ad_format'], $data['campaign_id']);
-            $ad->name = $data['ad_name'];
-            $ad->autobidding = (int)$data['ad_autobidding'];
-            $ad->goalType = (int)$data['goal_type'];
-            $ad->costType = (int)$data['cost_type'];
-            $ad->ocpm = $data['ocpm'];
-            $ad->category1Id = $data['category1_id'];
-            $ad->dayLimit = $data['day_limit'];
-
-            $ad->targeting = $adTargeting;
-            $ad->post = $post;
-
-
             try {
-                $adId = $this->vk->createAd($ad);
-                $status = 'created';
+                $adId = $data[AdsFeed::COL_AD_ID] ?? null;
+                if ($adId) {
+                    $updatedState = array_replace($currentState[$adId], $data);
+                    $this->vk->updateAd($updatedState);
+                } else {
+                    $adTargeting = new AdTargeting();
+                    $adTargeting->country = $data['targeting_country'];
+                    $adTargeting->cities = explode(',', $data['targeting_cities']);
+
+                    $post = new WallPostStealth();
+                    $post->ownerId = $data['post_owner_id'];
+                    $post->linkButton = $data['post_link_button'];
+                    $post->linkImage = $data['post_link_image'];
+                    $post->message = $data['post_message'];
+                    $post->guid = uniqid('stealth_post');
+                    $post->attachments = explode(',', $data['post_attachments']);
+
+                    $ad = new Ad();
+                    $ad->format = $data['ad_format'];
+                    $ad->campaignId = $data['campaign_id'];
+                    $ad->name = $data['ad_name'];
+                    $ad->autobidding = (int)$data['ad_autobidding'];
+                    $ad->goalType = (int)$data['goal_type'];
+                    $ad->costType = (int)$data['cost_type'];
+                    $ad->ocpm = $data['ocpm'];
+                    $ad->category1Id = $data['category1_id'];
+                    $ad->dayLimit = $data['day_limit'];
+
+                    $ad->targeting = $adTargeting;
+                    $ad->post = $post;
+
+                    $adId = $this->vk->createAd($ad);
+                }
+                $status = 'done';
                 $error = null;
             } catch (\Exception $e) {
-                $adId = null;
                 $status = 'failed';
                 $error = $e->getMessage();
 
@@ -164,7 +174,7 @@ class VkExportAds extends Command
     private function makeAdResults(string $status, ?int $adId = null, ?string $error = null)
     {
         return [
-            'ad_id'                => (string)$adId,
+            AdsFeed::COL_AD_ID     => $adId ?: '',
             'asdark:export_status' => $status,
             'asdark:export_error'  => (string)$error
         ];

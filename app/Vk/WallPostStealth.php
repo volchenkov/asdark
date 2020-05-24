@@ -15,9 +15,4 @@ class WallPostStealth
     public ?string $linkImage;
     public ?string $linkVideo;
 
-    public function __construct(int $ownerId)
-    {
-        $this->ownerId = $ownerId;
-    }
-
 }

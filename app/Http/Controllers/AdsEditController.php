@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Vk\ApiClient as VkApiClient;
+use App\Vk\AdsFeed;
 use App\Google\ApiClient as GoogleApiClient;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
@@ -15,14 +16,9 @@ class AdsEditController extends BaseController
         $campaigns = VkApiClient::instance()->getCampaigns();
         usort($campaigns, fn ($a, $b) => strcmp($a["name"], $b["name"]));
 
-        $editableFields = [
-            'post_message'    => 'Текст рекламного поста',
-            'post_link_image' => 'Картинка рекламного поста',
-        ];
-
         return view('ads-edit-generation-form', [
             'campaigns'      => $campaigns,
-            'editableFields' => $editableFields
+            'fields'         => array_filter(AdsFeed::FIELDS, fn($field) => $field['editable'])
         ]);
     }
 
@@ -33,67 +29,19 @@ class AdsEditController extends BaseController
 
         $vk = VkApiClient::instance();
 
-        $ads = [];
-        foreach ($vk->getAds($campaignIds) as $ad) {
-            $ads[$ad['id']] = $ad;
-        }
+        $ads = $vk->getAds($campaignIds);
 
-        if (!$ads) {
-            return response('No ads found');
-        }
+        $defaultCols = [
+            AdsFeed::COL_CAMPAIGN_ID,
+            AdsFeed::COL_CAMPAIGN_NAME,
+            AdsFeed::COL_AD_ID,
+            AdsFeed::COL_AD_NAME,
+        ];
+        $feed = $vk->getFeed(array_column($ads, 'id'), array_merge($defaultCols, $adFields));
+        usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 
-        foreach ($vk->getAdsLayout(array_keys($ads)) as $layout) {
-            $ads[$layout['id']]['layout'] = $layout;
-        }
-
-        if ($needPosts = true) {
-            $re = '/^http(s)?:\/\/vk.com\/wall/';
-
-            $adPostIds = [];
-            foreach ($ads as $ad) {
-                $adPostIds[$ad['id']] = preg_replace($re, '', $ad['layout']['link_url'] ?? '');
-            }
-
-            $postIds = array_filter(array_unique(array_values($adPostIds)));
-            if ($postIds) {
-                $posts = $vk->getWallPosts($postIds);
-
-                $postIdAds = array_flip($adPostIds);
-                foreach ($posts as $post) {
-                    $postId = "{$post['from_id']}_{$post['id']}";
-                    $adId = $postIdAds[$postId];
-                    $ads[$adId]['post'] = $post;
-                }
-            }
-        }
-
-        $getValue = function (array $ad, string $field) {
-            switch ($field) {
-                case 'post_message':
-                    return $ad['post']['text'] ?? null;
-                case 'post_link_image':
-                    return $ad['post']['attachments'][0]['link']['photo']['sizes'][0]['url'] ?? null;
-                default:
-                    return null;
-            }
-        };
-
-        $editionFeed = [];
-        foreach ($ads as $ad) {
-            $row = [
-                'campaign_id' => $ad['campaign_id'],
-                'ad_id'       => $ad['id'],
-            ];
-            foreach ($adFields as $field) {
-                $row[$field] = $getValue($ad, $field);
-            }
-            $editionFeed[] = $row;
-        }
-
-        usort($ads, fn($a, $b) => $a["campaign_id"] <=> $b["campaign_id"]);
-
-        $headers = array_keys($editionFeed[0]);
-        $rows = array_map('array_values', $editionFeed);
+        $headers = array_keys(array_values($feed)[0]);
+        $rows = array_map('array_values', $feed);
         array_unshift($rows, $headers);
 
         $google = new GoogleApiClient();

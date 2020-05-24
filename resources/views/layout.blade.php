@@ -20,7 +20,7 @@
                     <div class="row pt-4">
                         @if($vkAccount)
                         <div class="col-12 my-1">
-                            <a href="/exports_confirm" class="text-white mr-3">Новая загрузка</a>
+                            <a href="/exports_confirm" class="text-white mr-3">Запустить загрузку</a>
                             <a href="/exports" class="text-white mr-3">Загрузки</a>
                         </div>
                         <div class="col-12 mb-3">

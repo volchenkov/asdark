@@ -25,7 +25,8 @@ class CdsController extends BaseController
         $promo = $request->input('promo_name');
 
         $targetings = [];
-        foreach ($google->getCells($request->input('targetings_sid'), 'Sheet1') as $targeting) {
+        $targetingsFeed = $google->getCells($request->input('targetings_sid'), 'Sheet1');
+        foreach ($targetingsFeed as $targeting) {
             $requiredFields = ['name', 'cities', 'country'];
             if ($diff = array_diff($requiredFields, array_keys($targeting))) {
                 $msg = "<p>Required targeting fields missed:<b>".implode(',', $diff)."</b>.</p>";

@@ -29,12 +29,6 @@ class Ad
     public int $category1Id;
     public WallPostStealth $post;
     public AdTargeting $targeting;
-    public ?int $vkId;
-
-    public function __construct(int $format, int $campaignId)
-    {
-        $this->format = $format;
-        $this->campaignId = $campaignId;
-    }
+    public ?int $id;
 
 }

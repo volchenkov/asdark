@@ -73,6 +73,104 @@ class ApiClient
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }
 
+    public function getFeed(array $adIds, array $fields): array
+    {
+        $getFieldValue = function(array $ad, string $field)
+        {
+            switch ($field) {
+                case AdsFeed::COL_AD_ID:
+                    return $ad['id'];
+                case AdsFeed::COL_AD_NAME:
+                    return $ad['name'];
+                case AdsFeed::COL_AD_LINK_URL:
+                    return $ad['layout']['link_url'];
+                case AdsFeed::COL_CAMPAIGN_ID:
+                    return $ad['campaign_id'];
+                case AdsFeed::COL_CAMPAIGN_NAME:
+                    return $ad['campaign']['name'] ?? null;
+                case AdsFeed::COL_POST_TEXT:
+                    return $ad['post']['text'] ?? null;
+                case AdsFeed::COL_POST_LINK_IMAGE:
+                    return $ad['post']['attachments'][0]['link']['photo']['sizes'][0]['url'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_URL:
+                    return $ad['post']['attachments'][0]['link']['url'] ?? null;
+                case AdsFeed::COL_POST_ID:
+                    return $ad['post']['id'] ?? null;
+                case AdsFeed::COL_POST_OWNER_ID:
+                    return $ad['post']['owner_id'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE:
+                    return $ad['post']['attachments'][0]['link']['button']['action']['type'] ?? null;
+                default:
+                    return null;
+            }
+        };
+
+        $ads = [];
+        foreach ($this->get('ads.getAds', ['ad_ids' => json_encode($adIds)]) as $ad) {
+            $ads[$ad['id']] = $ad;
+        }
+        if (!$ads) {
+            return [];
+        }
+        $campaignFields = [
+            AdsFeed::COL_CAMPAIGN_NAME,
+        ];
+        $needCampaigns = count(array_intersect($campaignFields, $fields)) > 0;
+        if ($needCampaigns) {
+            $campaigns = [];
+            foreach ($this->getCampaigns() as $campaign) {
+                $campaigns[$campaign['id']] = $campaign;
+            }
+
+            foreach ($ads as $adId => $ad) {
+                $ads[$adId]['campaign'] = $campaigns[$ad['campaign_id']]; // @todo: null когда удалена?
+            }
+        }
+
+        $postFields = [
+            AdsFeed::COL_POST_LINK_IMAGE,
+            AdsFeed::COL_POST_TEXT,
+            AdsFeed::COL_POST_OWNER_ID,
+            AdsFeed::COL_POST_ID,
+        ];
+        $needPosts = count(array_intersect($postFields, $fields)) > 0;
+        if ($needPosts) {
+            $layouts = $this->getAdsLayout(array_keys($ads));
+            foreach ($layouts as $layout) {
+                $ads[$layout['id']]['layout'] = $layout;
+            }
+
+            $adPostIds = [];
+            foreach ($ads as $ad) {
+                $adPostIds[$ad['id']] = preg_replace('/^http(s)?:\/\/vk.com\/wall/', '', $ad['layout']['link_url'] ?? '');
+            }
+
+            $postIds = array_filter(array_unique(array_values($adPostIds)));
+            if ($postIds) {
+                $posts = $this->getWallPosts($postIds);
+
+                $postIdAds = array_flip($adPostIds);
+                foreach ($posts as $post) {
+                    $postId = "{$post['from_id']}_{$post['id']}";
+                    $adId = $postIdAds[$postId];
+
+                    $ads[$adId]['post'] = $post;
+                }
+            }
+        }
+
+        $rows = [];
+        foreach ($ads as $ad) {
+            $row = [];
+            foreach ($fields as $field) {
+                $row[$field] = $getFieldValue($ad, $field);
+            }
+            $rows[$ad['id']] = $row;
+        }
+
+        return $rows;
+    }
+
     public function createAd(Ad $ad): int
     {
         $fields = [
@@ -119,7 +217,7 @@ class ApiClient
         return intval($adId);
     }
 
-    public function createWallPost(WallPostStealth $post): int
+    private function createWallPost(WallPostStealth $post): int
     {
         $fields = [
             'attachments' => implode(',', $post->attachments),
@@ -147,6 +245,30 @@ class ApiClient
         return $rsp['post_id'];
     }
 
+    public function updateAd(array $ad)
+    {
+        $this->editWallPost($ad);
+    }
+
+    private function editWallPost($post)
+    {
+        $fields = [
+            'owner_id'    => $post[AdsFeed::COL_POST_OWNER_ID],
+            'post_id'     => $post[AdsFeed::COL_POST_ID],
+        ];
+        if (isset($post[AdsFeed::COL_POST_TEXT])) {
+            $fields['message'] = $post[AdsFeed::COL_POST_TEXT];
+        }
+        if (isset($post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
+            $fields['link_button'] = $post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+        }
+        if (isset($post[AdsFeed::COL_POST_LINK_IMAGE])) {
+            $fields['attachments'] = $post[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+            $fields['link_image'] = $post[AdsFeed::COL_POST_LINK_IMAGE];
+        }
+        $this->get('wall.editAdsStealth', $fields);
+    }
+
     private function get(string $method, array $queryParams = [])
     {
         $rsp = $this->http->get($method, ['query' => $this->addDefaultParams($queryParams)]);
@@ -157,6 +279,7 @@ class ApiClient
             throw new \RuntimeException("Failed to decode response: {$method} ".(string)$rsp->getBody());
         }
 
+        sleep(1);
         return $data['response'];
     }
 

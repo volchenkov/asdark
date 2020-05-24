@@ -170,7 +170,7 @@ class ApiClient
             $rows[$ad['id']] = $row;
         }
 
-        return $ads;
+        return $rows;
     }
 
     public function createAd(array $ad): int

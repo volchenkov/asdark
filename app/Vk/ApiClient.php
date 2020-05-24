@@ -222,7 +222,7 @@ class ApiClient
             'signed'      => 0,
             'guid'        => uniqid('stealth_post'),
             'link_button' => $post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE],
-            'link_image'  =>  $post[AdsFeed::COL_POST_LINK_IMAGE]
+            'link_image'  => $post[AdsFeed::COL_POST_LINK_IMAGE]
         ];
 
         $rsp = $this->get('wall.postAdsStealth', $fields);

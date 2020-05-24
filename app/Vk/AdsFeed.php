@@ -76,7 +76,7 @@ class AdsFeed
             'desc'     => 'ID рекламного поста внутри группы'
         ],
         self::COL_POST_ATTACHMENT_LINK_URL                => [
-            'editable' => false,
+            'editable' => true,
             'entity'   => 'post',
             'desc'     => 'Ссылка на форму заявок'
         ],

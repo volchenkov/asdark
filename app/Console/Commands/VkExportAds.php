@@ -2,9 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Vk\Ad;
-use App\Vk\AdTargeting;
-use App\Vk\WallPostStealth;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
@@ -120,33 +117,7 @@ class VkExportAds extends Command
                 if ($adId) {
                     $this->vk->updateAd($data, $currentState[$adId]);
                 } else {
-                    $adTargeting = new AdTargeting();
-                    $adTargeting->country = $data['targeting_country'];
-                    $adTargeting->cities = explode(',', $data['targeting_cities']);
-
-                    $post = new WallPostStealth();
-                    $post->ownerId = $data['post_owner_id'];
-                    $post->linkButton = $data['post_link_button'];
-                    $post->linkImage = $data['post_link_image'];
-                    $post->message = $data['post_message'];
-                    $post->guid = uniqid('stealth_post');
-                    $post->attachments = explode(',', $data['post_attachments']);
-
-                    $ad = new Ad();
-                    $ad->format = $data['ad_format'];
-                    $ad->campaignId = $data['campaign_id'];
-                    $ad->name = $data['ad_name'];
-                    $ad->autobidding = (int)$data['ad_autobidding'];
-                    $ad->goalType = (int)$data['goal_type'];
-                    $ad->costType = (int)$data['cost_type'];
-                    $ad->ocpm = $data['ocpm'];
-                    $ad->category1Id = $data['category1_id'];
-                    $ad->dayLimit = $data['day_limit'];
-
-                    $ad->targeting = $adTargeting;
-                    $ad->post = $post;
-
-                    $adId = $this->vk->createAd($ad);
+                    $adId = $this->vk->createAd($data);
                 }
                 $status = 'done';
                 $error = null;

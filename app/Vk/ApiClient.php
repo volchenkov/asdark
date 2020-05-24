@@ -10,6 +10,17 @@ use \GuzzleHttp\Client;
 class ApiClient
 {
 
+    const AD_FORMAT_TEXT = 1;
+    const AD_FORMAT_BIG_ING = 2;
+    const AD_FORMAT_PROMO = 4;
+    const AD_FORMAT_SPEC_FOR_GROUPS = 8;
+    const AD_FORMAT_GROUP_POST = 9;
+    const AD_FORMAT_ADAPTIVE = 11;
+
+    const AD_COST_TYPE_CLICKS = 0;
+    const AD_COST_TYPE_VIEWS = 1;
+    const AD_COST_TYPE_OPTIMIZED_VIEWS = 3;
+
     const VERSION = '5.103';
 
     private string $account;
@@ -159,36 +170,30 @@ class ApiClient
             $rows[$ad['id']] = $row;
         }
 
-        return $rows;
+        return $ads;
     }
 
-    public function createAd(Ad $ad): int
+    public function createAd(array $ad): int
     {
         $fields = [
-            'ad_format'    => $ad->format,
-            'autobidding'  => $ad->autobidding,
-            'campaign_id'  => $ad->campaignId,
-            'name'         => $ad->name,
-            'cost_type'    => $ad->costType,
-            'goal_type'    => $ad->goalType,
-            'category1_id' => $ad->category1Id,
-            'country'      => $ad->targeting->country,
-            'cities'       => implode(',', $ad->targeting->cities),
-            'day_limit'    => $ad->dayLimit,
+            'ad_format'    => $ad[AdsFeed::COL_AD_FORMAT],
+            'autobidding'  => $ad[AdsFeed::COL_AUTOBIDDING],
+            'campaign_id'  => $ad[AdsFeed::COL_CAMPAIGN_ID],
+            'name'         => $ad[AdsFeed::COL_AD_NAME],
+            'cost_type'    => $ad[AdsFeed::COL_COST_TYPE],
+            'goal_type'    => $ad[AdsFeed::COL_GOAL_TYPE],
+            'category1_id' => $ad[AdsFeed::COL_AD_CATEGORY1],
+            'country'      => $ad[AdsFeed::COL_AD_TARGETING_COUNTRY],
+            'cities'       => $ad[AdsFeed::COL_AD_TARGETING_CITIES],
+            'day_limit'    => $ad[AdsFeed::COL_AD_DAY_LIMIT],
         ];
-        if ($ad->costType === Ad::COST_TYPE_CLICKS) {
-            $fields['cpc'] = $ad->cpc;
+        if ($ad[AdsFeed::COL_COST_TYPE] === self::AD_COST_TYPE_OPTIMIZED_VIEWS) {
+            $fields['ocpm'] = $ad[AdsFeed::COL_AD_OCPM];
         }
-        if ($ad->costType === Ad::COST_TYPE_VIEWS) {
-            $fields['cpm'] = $ad->cpm;
-        }
-        if ($ad->costType === Ad::COST_TYPE_OPTIMIZED_VIEWS) {
-            $fields['ocpm'] = $ad->ocpm;
-        }
-        if (isset($ad->post)) {
-            $postId = $this->createWallPost($ad->post);
+        if (AdsFeed::dependsOn('post', array_keys($ad))) {
+            $postId = $this->createWallPost($ad);
             sleep(4); // to prevent 603  error "Invalid community post"
-            $fields['link_url'] = "http://vk.com/wall{$ad->post->ownerId}_{$postId}";
+            $fields['link_url'] = "http://vk.com/wall{$ad[AdsFeed::COL_POST_OWNER_ID]}_{$postId}";
         }
         $result = $this->get('ads.createAds', ['data' => json_encode([$fields])]);
 
@@ -208,25 +213,17 @@ class ApiClient
         return intval($adId);
     }
 
-    private function createWallPost(WallPostStealth $post): int
+    private function createWallPost(array $post): int
     {
         $fields = [
-            'attachments' => implode(',', $post->attachments),
-            'owner_id'    => $post->ownerId,
-            'message'     => $post->message,
-            'signed'      => $post->signed,
-            'guid'        => $post->guid,
-            'link_button' => $post->linkButton,
+            'attachments' => $post[AdsFeed::COL_POST_ATTACHMENT_LINK_URL],
+            'owner_id'    => $post[AdsFeed::COL_POST_OWNER_ID],
+            'message'     => $post[AdsFeed::COL_POST_TEXT],
+            'signed'      => 0,
+            'guid'        => uniqid('stealth_post'),
+            'link_button' => $post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE],
+            'link_image'  =>  $post[AdsFeed::COL_POST_LINK_IMAGE]
         ];
-        if (isset($post->linkTitle)) {
-            $fields['link_title'] = $post->linkTitle;
-        }
-        if (isset($post->linkVideo)) {
-            $fields['link_video'] = $post->linkVideo;
-        }
-        if (isset($post->linkImage)) {
-            $fields['link_image'] = $post->linkImage;
-        }
 
         $rsp = $this->get('wall.postAdsStealth', $fields);
         if (!isset($rsp['post_id'])) {
@@ -245,17 +242,16 @@ class ApiClient
             $fields['name'] = $ad[AdsFeed::COL_AD_NAME];
         }
 
-        if (AdsFeed::dependsOn('post', $ad)) {
+        if (AdsFeed::dependsOn('post', array_keys($ad))) {
             $this->editWallPost(array_replace($currentState, $ad));
         }
 
-        if (AdsFeed::dependsOn('ad', $ad)) {
+        if (AdsFeed::dependsOn('ad', array_keys($ad))) {
             $rsp = $this->get('ads.updateAds', ['data' => json_encode([$fields])]);
 
             if (isset($rsp[0]['error_desc'])) {
                 throw new \RuntimeException('Failed to update ad: '.json_encode($rsp));
             }
-
         }
 
         return 'OK';

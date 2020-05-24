@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Vk\AdsFeed;
 use App\Vk\ApiClient as VkApiClient;
 use App\Google\ApiClient as GoogleApiClient;
 use Illuminate\Routing\Controller as BaseController;
@@ -29,8 +30,8 @@ class CdsController extends BaseController
         foreach ($targetingsFeed as $targeting) {
             $requiredFields = ['name', 'cities', 'country'];
             if ($diff = array_diff($requiredFields, array_keys($targeting))) {
-                $msg = "<p>Required targeting fields missed:<b>".implode(',', $diff)."</b>.</p>";
-                $msg.= "<p>Please, add columns to targetings table and try again</p>";
+                $msg = "<p>Required targeting fields missed:<b>" . implode(',', $diff) . "</b>.</p>";
+                $msg .= "<p>Please, add columns to targetings table and try again</p>";
 
                 return response($msg);
             }
@@ -47,24 +48,22 @@ class CdsController extends BaseController
                     $request->input('ad_name')
                 );
                 $ads[] = [
-                    'ad_format'         => $request->input('ad_format'),
-                    'campaign_id'       => $campaignId,
-                    'ad_name'           => $name,
-                    'goal_type'         => $request->input('goal_type'),
-                    'cost_type'         => $request->input('cost_type'),
-                    'ad_autobidding'    => (int)filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
-                    'day_limit'         => $request->input('day_limit'),
-                    'ocpm'              => $request->input('ocpm'),
-                    'cpm'               => '',
-                    'cpc'               => '',
-                    'category1_id'      => $request->input('category1_id'),
-                    'targeting_cities'  => $targeting['cities'],
-                    'targeting_country' => $targeting['country'],
-                    'post_link_button'  => $request->input('link_button'),
-                    'post_link_image'   => $request->input('creative'),
-                    'post_message'      => $request->input('message'),
-                    'post_attachments'  => $request->input('form_uri'),
-                    'post_owner_id'     => $request->input('post_owner_id')
+                    AdsFeed::COL_AD_FORMAT                               => $request->input('ad_format'),
+                    AdsFeed::COL_CAMPAIGN_ID                             => $campaignId,
+                    AdsFeed::COL_AD_NAME                                 => $name,
+                    AdsFeed::COL_GOAL_TYPE                               => $request->input('goal_type'),
+                    AdsFeed::COL_COST_TYPE                               => $request->input('cost_type'),
+                    AdsFeed::COL_AUTOBIDDING                             => (int)filter_var($request->input('autobidding'), FILTER_VALIDATE_BOOLEAN),
+                    AdsFeed::COL_AD_DAY_LIMIT                            => $request->input('day_limit'),
+                    AdsFeed::COL_AD_OCPM                                 => $request->input('ocpm'),
+                    AdsFeed::COL_AD_CATEGORY1                            => $request->input('category1_id'),
+                    AdsFeed::COL_AD_TARGETING_CITIES                     => $targeting['cities'],
+                    AdsFeed::COL_AD_TARGETING_COUNTRY                    => $targeting['country'],
+                    AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE => $request->input('link_button'),
+                    AdsFeed::COL_POST_LINK_IMAGE                         => $request->input('creative'),
+                    AdsFeed::COL_POST_TEXT                               => $request->input('message'),
+                    AdsFeed::COL_POST_ATTACHMENT_LINK_URL                => $request->input('form_uri'),
+                    AdsFeed::COL_POST_OWNER_ID                           => $request->input('post_owner_id')
                 ];
             }
         }
@@ -77,9 +76,11 @@ class CdsController extends BaseController
             $rows[] = array_values($ad);
         }
 
-        $title = "asdark - объявления для ВК {$now} {$promo}";
-        $permission = new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone']);
-        $spreadsheet = $google->createSpreadSheet($title, $rows, $permission);
+        $spreadsheet = $google->createSpreadSheet(
+            "asdark - объявления для ВК {$now} {$promo}",
+            $rows,
+            new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone'])
+        );
 
         return redirect()->action('ExportsController@confirm', ['sid' => $spreadsheet->getSpreadsheetId()]);
     }

@@ -27,6 +27,8 @@ class AdsFeed
     const COL_AD_LINK_URL = 'ad_link_url';
     const COL_AD_TARGETING_COUNTRY = 'targeting_country';
     const COL_AD_TARGETING_CITIES = 'targeting_cities';
+    const COL_POST_ATTACHMENT_LINK_VIDEO_ID = 'post_attachments_link_video_id';
+    const COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID = 'post_attachments_link_video_owner_id';
 
 
     const FIELDS = [
@@ -134,6 +136,16 @@ class AdsFeed
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Дней лимит трат на объявление, руб'
+        ],
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_ID => [
+            'editable' => false,
+            'entity'   => 'post',
+            'desc'     => 'ID видео поста'
+        ],
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID => [
+            'editable' => false,
+            'entity'   => 'post',
+            'desc'     => 'ID владельца (группы) видео поста'
         ]
     ];
 

@@ -108,8 +108,14 @@ class ApiClient
                     return $ad['post']['id'] ?? null;
                 case AdsFeed::COL_POST_OWNER_ID:
                     return $ad['post']['owner_id'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE:
+                    return $ad['post']['attachments'][0]['link']['title'] ?? null;
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE:
                     return $ad['post']['attachments'][0]['link']['button']['action']['type'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID:
+                    return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
+                    return $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
                 default:
                     return null;
             }
@@ -288,10 +294,20 @@ class ApiClient
                 if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
                     $postFields['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
                 }
-                if (isset($ad[AdsFeed::COL_POST_LINK_IMAGE])) {
-                    $postFields['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
-                    $postFields['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE])) {
+                    $postFields['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
                 }
+                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL])) {
+                    $postFields['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+
+                    if (isset($ad[AdsFeed::COL_POST_LINK_IMAGE])) {
+                        $postFields['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+                    }
+                    if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID])) {
+                        $postFields['link_video'] = "{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+                    }
+                }
+
                 $posts[] = $postFields;
             }
 
@@ -315,7 +331,7 @@ class ApiClient
                 $error .= "Не удалось обновить объявление: {$rsp['ads'][$i]['error_code']} {$rsp['ads'][$i]['error_desc']}. ";
             }
             if (isset($rsp['posts'][$i]) && $rsp['posts'][$i] != 1) {
-                $error .= "Не удалось обновить пост: {$rsp['posts'][$i]}. ";
+                $error .= "Не удалось обновить пост. ";
             }
             $errors[$item[AdsFeed::COL_AD_ID]] = $error;
         }

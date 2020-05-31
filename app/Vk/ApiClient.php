@@ -86,8 +86,7 @@ class ApiClient
 
     public function getFeed(array $adIds, array $fields): array
     {
-        $getFieldValue = function(array $ad, string $field)
-        {
+        $getFieldValue = function (array $ad, string $field) {
             switch ($field) {
                 case AdsFeed::COL_AD_ID:
                     return $ad['id'];
@@ -144,7 +143,8 @@ class ApiClient
         if (AdsFeed::dependsOn('post', $fields)) {
             $adPostIds = [];
             foreach ($ads as $ad) {
-                $adPostIds[$ad['id']] = preg_replace('/^http(s)?:\/\/vk.com\/wall/', '', $ad['layout']['link_url'] ?? '');
+                $adPostIds[$ad['id']] = preg_replace('/^http(s)?:\/\/vk.com\/wall/', '',
+                    $ad['layout']['link_url'] ?? '');
             }
 
             $postIds = array_filter(array_unique(array_values($adPostIds)));
@@ -207,7 +207,7 @@ class ApiClient
 
         $adId = $result[0]['id'] ?? null;
         if (!$adId) {
-            throw new \RuntimeException('Failed to create ad: '.json_encode($result));
+            throw new \RuntimeException('Failed to create ad: ' . json_encode($result));
         }
 
         return intval($adId);
@@ -227,41 +227,107 @@ class ApiClient
 
         $rsp = $this->get('wall.postAdsStealth', $fields);
         if (!isset($rsp['post_id'])) {
-            throw new \RuntimeException("Failed to create post: ".json_encode($rsp));
+            throw new \RuntimeException("Failed to create post: " . json_encode($rsp));
         }
 
         return $rsp['post_id'];
     }
 
-    public function updateAd(array $ad, array $currentState)
+    public function updateAds(array $feed): array
     {
-        $fields = [
-            'ad_id' => $ad[AdsFeed::COL_AD_ID],
-        ];
-        if (isset($ad[AdsFeed::COL_AD_NAME])) {
-            $fields['name'] = $ad[AdsFeed::COL_AD_NAME];
+        if (!$feed) {
+            return [];
+        }
+        $feedColumns = array_keys($feed[0]);
+
+        if (!in_array(AdsFeed::COL_AD_ID, $feedColumns)) {
+            throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
         }
 
-        if (AdsFeed::dependsOn('post', array_keys($ad))) {
-            $this->editWallPost(array_replace($currentState, $ad));
+        $adIds = array_filter(array_unique(array_column($feed, AdsFeed::COL_AD_ID)));
+        $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
+
+        /** @todo handle 25 operations limit  */
+        $code = '';
+        $code .= "var a = '{$this->account}';";
+        $code .= "var result = {'ads': null, 'posts': []};";
+
+        if (AdsFeed::dependsOn('ad', $feedColumns)) {
+            $items = [];
+            foreach ($feed as $ad) {
+                $adFields = [
+                    'ad_id' => $ad[AdsFeed::COL_AD_ID],
+                ];
+                if (isset($ad[AdsFeed::COL_AD_NAME]) && $adName = $ad[AdsFeed::COL_AD_NAME]) {
+                    $adFields['name'] = $adName;
+                }
+                if (isset($ad[AdsFeed::COL_AD_LINK_URL]) && $adUrl = $ad[AdsFeed::COL_AD_LINK_URL]) {
+                    $adFields['link_url'] = $adUrl;
+                }
+                $items[] = $adFields;
+            }
+            $code .= "
+                result.ads = API.ads.updateAds({
+                    'data': '" . json_encode($items, JSON_UNESCAPED_UNICODE) . "',
+                    'account_id': a
+                });
+            ";
         }
 
-        if (AdsFeed::dependsOn('ad', array_keys($ad))) {
-            $rsp = $this->get('ads.updateAds', ['data' => json_encode([$fields])]);
+        if (AdsFeed::dependsOn('post', $feedColumns)) {
+            $posts = [];
+            foreach ($feed as $ad) {
+                $ad = array_replace($currentState[$ad[AdsFeed::COL_AD_ID]], $ad);
+                $postFields = [
+                    'owner_id' => $ad[AdsFeed::COL_POST_OWNER_ID],
+                    'post_id'  => $ad[AdsFeed::COL_POST_ID],
+                ];
+                if (isset($ad[AdsFeed::COL_POST_TEXT])) {
+                    $postFields['message'] = $ad[AdsFeed::COL_POST_TEXT];
+                }
+                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
+                    $postFields['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+                }
+                if (isset($ad[AdsFeed::COL_POST_LINK_IMAGE])) {
+                    $postFields['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+                    $postFields['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+                }
+                $posts[] = $postFields;
+            }
 
-            if (isset($rsp[0]['error_desc'])) {
-                throw new \RuntimeException('Failed to update ad: '.json_encode($rsp));
+            foreach ($posts as $post) {
+                $params = json_encode(array_replace($post, ['account_id' => 'a']), JSON_UNESCAPED_UNICODE);
+                $code .= "result.posts.push(API.wall.editAdsStealth({$params}));";
             }
         }
 
-        return 'OK';
+        $code .= 'return result;';
+        $rsp = $this->get('execute', ['code' => $code]);
+
+        if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
+            throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
+        }
+
+        $errors = [];
+        foreach ($feed as $i => $item) {
+            $error = null;
+            if (isset($rsp['ads'][$i]['error_desc'])) {
+                $error .= "Не удалось обновить объявление: {$rsp['ads'][$i]['error_code']} {$rsp['ads'][$i]['error_desc']}. ";
+            }
+            if (isset($rsp['posts'][$i]) && $rsp['posts'][$i] != 1) {
+                $error .= "Не удалось обновить пост: {$rsp['posts'][$i]}. ";
+            }
+            $errors[$item[AdsFeed::COL_AD_ID]] = $error;
+        }
+
+        return $errors;
     }
 
     private function editWallPost($post)
     {
         $fields = [
-            'owner_id'    => $post[AdsFeed::COL_POST_OWNER_ID],
-            'post_id'     => $post[AdsFeed::COL_POST_ID],
+            'owner_id' => $post[AdsFeed::COL_POST_OWNER_ID],
+            'post_id'  => $post[AdsFeed::COL_POST_ID],
         ];
         if (isset($post[AdsFeed::COL_POST_TEXT])) {
             $fields['message'] = $post[AdsFeed::COL_POST_TEXT];
@@ -283,7 +349,7 @@ class ApiClient
         $data = \json_decode($rsp->getBody()->getContents(), true);
 
         if (is_null($data) || !isset($data['response'])) {
-            throw new \RuntimeException("Failed to decode response: {$method} ".(string)$rsp->getBody());
+            throw new \RuntimeException("Failed to decode response: {$method} " . (string)$rsp->getBody());
         }
 
         sleep(1);

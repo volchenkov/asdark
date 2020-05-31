@@ -103,43 +103,20 @@ class VkExportAds extends Command
         $headers = array_keys(array_replace($feed[0], $this->makeAdResults('whatever')));
         $this->google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
 
-        $errors = 0;
-        $adIds = array_filter(array_map(fn($ad) => $ad[AdsFeed::COL_AD_ID] ?? null, $feed));
-        $currentState = $this->vk->getFeed($adIds, array_keys(AdsFeed::FIELDS));
-        foreach ($feed as $i => $data) {
-            $done = ($data['asdark:export_status'] ?? null) === 'done';
-            if ($done) {
-                continue;
-            }
+        $errors = $this->vk->updateAds($feed);
 
-            try {
-                $adId = $data[AdsFeed::COL_AD_ID] ?? null;
-                if ($adId) {
-                    $this->vk->updateAd($data, $currentState[$adId]);
-                } else {
-                    $adId = $this->vk->createAd($data);
-                }
-                $status = 'done';
-                $error = null;
-            } catch (\Exception $e) {
-                $status = 'failed';
-                $error = $e->getMessage();
+        $a1cols = GoogleApiClient::getA1Cols($headers);
 
-                $errors++;
-                error_log('Failed to handle ad row: ' . $e->getMessage());
-            } finally {
-                $result = array_replace($data, $this->makeAdResults($status, $adId, $error));
-                try {
-                    $row = $i + 2;
-                    $range = "{$sheetTitle}!{$row}:{$row}";
-                    $this->google->writeCells($spreadsheetId, $range , [array_values($result)]);
-                } catch (\Exception $e) {
-                    error_log('Failed to update ad row: ' . $e->getMessage());
-                }
-            }
+        $result = [];
+        foreach ($feed as $item) {
+            $error = $errors[$item[AdsFeed::COL_AD_ID]] ?? '';
+            $result[] = [$error ? 'failed' : 'done', $error];
         }
 
-        return $errors;
+        $range = "{$sheetTitle}!{$a1cols['asdark:export_status']}2:{$a1cols['asdark:export_error']}".(1+count($feed));
+        $this->google->writeCells($spreadsheetId, $range , $result);
+
+        return count($errors);
     }
 
     private function makeAdResults(string $status, ?int $adId = null, ?string $error = null)

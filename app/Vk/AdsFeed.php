@@ -51,9 +51,9 @@ class AdsFeed
             'desc'     => 'Имя объявления'
         ],
         self::COL_AD_LINK_URL                             => [
-            'editable' => false,
+            'editable' => true,
             'entity'   => 'ad',
-            'desc'     => 'Ссылка на рекламируемый объект в формате'
+            'desc'     => 'Ссылка на рекламируемый объект'
         ],
         self::COL_POST_TEXT                               => [
             'editable' => true,
@@ -78,7 +78,7 @@ class AdsFeed
         self::COL_POST_ATTACHMENT_LINK_URL                => [
             'editable' => true,
             'entity'   => 'post',
-            'desc'     => 'Ссылка на форму заявок'
+            'desc'     => 'Ссылка в посте'
         ],
         self::COL_POST_ATTACHMENT_LINK_TITLE                => [
             'editable' => false,

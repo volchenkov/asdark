@@ -7,6 +7,11 @@ namespace App\Google;
 class ApiClient
 {
 
+    public static function getA1Cols(array $cols): array
+    {
+        return array_combine($cols, array_slice(str_split('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, count($cols)));
+    }
+
     public function createSpreadSheet(
         string $title,
         array $grid = null,

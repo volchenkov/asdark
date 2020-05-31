@@ -38,6 +38,7 @@ class AdsEditController extends BaseController
             AdsFeed::COL_AD_NAME,
         ];
         $feed = $vk->getFeed(array_column($ads, 'id'), array_unique(array_merge($defaultCols, $adFields)));
+
         usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 
         $headers = array_keys(array_values($feed)[0]);

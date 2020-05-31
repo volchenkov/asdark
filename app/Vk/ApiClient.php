@@ -35,7 +35,7 @@ class ApiClient
         $this->clientId = $clientId;
         $this->http = new Client([
             'base_uri' => 'https://api.vk.com/method/',
-            'timeout'  => 10.0
+            'timeout'  => 30.0
         ]);
     }
 
@@ -81,6 +81,7 @@ class ApiClient
 
     public function getWallPosts(array $posts): array
     {
+        /** @todo fix 100 post limits https://vk.com/dev/wall.getById */
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }
 
@@ -241,102 +242,117 @@ class ApiClient
 
     public function updateAds(array $feed): array
     {
-        if (!$feed) {
-            return [];
-        }
-        $feedColumns = array_keys($feed[0]);
-
-        if (!in_array(AdsFeed::COL_AD_ID, $feedColumns)) {
-            throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
-        }
-
         $adIds = array_filter(array_unique(array_column($feed, AdsFeed::COL_AD_ID)));
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
-        /** @todo handle 25 operations limit  */
-        $code = '';
-        $code .= "var a = '{$this->account}';";
-        $code .= "var result = {'ads': null, 'posts': []};";
+        $errors = array_fill_keys($adIds,null);
+        $commands = $this->getUpdateCommands($feed, $currentState);
+        foreach (array_chunk($commands, 25) as $chunk) {
+            $rsp = $this->get('execute', ['code' => $this->formatCode($chunk)]);
 
-        if (AdsFeed::dependsOn('ad', $feedColumns)) {
-            $items = [];
-            foreach ($feed as $ad) {
-                $adFields = [
+            if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
+                throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
+            }
+
+            foreach ($rsp['ads'] as $result) {
+                if (isset($result['error_desc'])) {
+                    $errors[$result['id']] .= "Не удалось обновить объявление: {$result['error_code']} {$result['error_desc']}. ";
+                }
+            }
+
+            foreach ($rsp['posts'] as $result) {
+                if (!isset($result['ok']) || $result['ok'] != 1) {
+                    $errors[$result['adId']] .= "Не удалось обновить пост. ";
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    private function formatCode(array $commands): string
+    {
+        $forType = fn($type) => fn($command) => $command['type'] == $type;
+
+        $code = "var a = '{$this->account}';\n";
+        $code .= "var result = {'ads': null, 'posts': []};\n";
+
+        $adsUpdates = array_filter($commands, $forType('updateAd'));
+        foreach (array_chunk($adsUpdates, 5) as $updates) {
+            $data = json_encode(array_column($updates, 'item'), JSON_UNESCAPED_UNICODE);
+            $code .= "result.ads = API.ads.updateAds({'data': '{$data}', 'account_id': a});\n";
+        }
+
+        $postUpdates = array_filter($commands, $forType('updatePost'));
+        foreach ($postUpdates as $update) {
+            $data = json_encode($update['item'], JSON_UNESCAPED_UNICODE);
+            $code .= "result.posts.push({'ok': API.wall.editAdsStealth({$data}), 'adId': '{$update['adId']}'});\n";
+        }
+
+        $code .= 'return result;';
+
+        return $code;
+    }
+
+    private function getUpdateCommands(array $feed, array $currentState): array
+    {
+        $feedCols = array_keys($feed[0]);
+        $commands = [];
+
+        if (AdsFeed::dependsOn('ad', $feedCols)) {
+            foreach($feed as $ad) {
+                $i = [
                     'ad_id' => $ad[AdsFeed::COL_AD_ID],
                 ];
                 if (isset($ad[AdsFeed::COL_AD_NAME]) && $adName = $ad[AdsFeed::COL_AD_NAME]) {
-                    $adFields['name'] = $adName;
+                    $i['name'] = $adName;
                 }
                 if (isset($ad[AdsFeed::COL_AD_LINK_URL]) && $adUrl = $ad[AdsFeed::COL_AD_LINK_URL]) {
-                    $adFields['link_url'] = $adUrl;
+                    $i['link_url'] = $adUrl;
                 }
-                $items[] = $adFields;
+                array_push($commands, [
+                    'type' => 'updateAd',
+                    'item'   => $i
+                ]);
             }
-            $code .= "
-                result.ads = API.ads.updateAds({
-                    'data': '" . json_encode($items, JSON_UNESCAPED_UNICODE) . "',
-                    'account_id': a
-                });
-            ";
         }
 
-        if (AdsFeed::dependsOn('post', $feedColumns)) {
-            $posts = [];
+        if (AdsFeed::dependsOn('post', $feedCols)) {
             foreach ($feed as $ad) {
                 $ad = array_replace($currentState[$ad[AdsFeed::COL_AD_ID]], $ad);
-                $postFields = [
+                $p = [
                     'owner_id' => $ad[AdsFeed::COL_POST_OWNER_ID],
                     'post_id'  => $ad[AdsFeed::COL_POST_ID],
                 ];
                 if (isset($ad[AdsFeed::COL_POST_TEXT])) {
-                    $postFields['message'] = $ad[AdsFeed::COL_POST_TEXT];
+                    $p['message'] = $ad[AdsFeed::COL_POST_TEXT];
                 }
                 if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
-                    $postFields['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+                    $p['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
                 }
                 if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE])) {
-                    $postFields['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
+                    $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
                 }
                 if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL])) {
-                    $postFields['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+                    $p['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
 
                     if (isset($ad[AdsFeed::COL_POST_LINK_IMAGE])) {
-                        $postFields['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+                        $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
                     }
                     if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID])) {
-                        $postFields['link_video'] = "{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+                        $p['link_video'] = "{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
                     }
                 }
 
-                $posts[] = $postFields;
-            }
-
-            foreach ($posts as $post) {
-                $params = json_encode(array_replace($post, ['account_id' => 'a']), JSON_UNESCAPED_UNICODE);
-                $code .= "result.posts.push(API.wall.editAdsStealth({$params}));";
+                array_push($commands, [
+                    'type' => 'updatePost',
+                    'item' => $p,
+                    'adId' => $ad[AdsFeed::COL_AD_ID]
+                ]);
             }
         }
 
-        $code .= 'return result;';
-        $rsp = $this->get('execute', ['code' => $code]);
-
-        if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
-            throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
-        }
-
-        $errors = [];
-        foreach ($feed as $i => $item) {
-            $error = null;
-            if (isset($rsp['ads'][$i]['error_desc'])) {
-                $error .= "Не удалось обновить объявление: {$rsp['ads'][$i]['error_code']} {$rsp['ads'][$i]['error_desc']}. ";
-            }
-            if (isset($rsp['posts'][$i]) && $rsp['posts'][$i] != 1) {
-                $error .= "Не удалось обновить пост. ";
-            }
-            $errors[$item[AdsFeed::COL_AD_ID]] = $error;
-        }
-
-        return $errors;
+        return $commands;
     }
 
 

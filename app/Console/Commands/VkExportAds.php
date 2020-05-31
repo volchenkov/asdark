@@ -100,12 +100,14 @@ class VkExportAds extends Command
         }
 
         // add result columns if not exists
-        $headers = array_keys(array_replace($feed[0], $this->makeAdResults('whatever')));
+        $headers = array_keys(array_replace($feed[0], array_fill_keys(['asdark:export_status', 'asdark:export_error'], null)));
+
+        if (!in_array(AdsFeed::COL_AD_ID, $headers)) {
+            throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
+        }
         $this->google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
 
         $errors = $this->vk->updateAds($feed);
-
-        $a1cols = GoogleApiClient::getA1Cols($headers);
 
         $result = [];
         foreach ($feed as $item) {
@@ -113,19 +115,11 @@ class VkExportAds extends Command
             $result[] = [$error ? 'failed' : 'done', $error];
         }
 
-        $range = "{$sheetTitle}!{$a1cols['asdark:export_status']}2:{$a1cols['asdark:export_error']}".(1+count($feed));
+        $A1 = GoogleApiClient::getA1Cols($headers);
+        $range = "{$sheetTitle}!{$A1['asdark:export_status']}2:{$A1['asdark:export_error']}".(1+count($feed));
         $this->google->writeCells($spreadsheetId, $range , $result);
 
-        return count($errors);
-    }
-
-    private function makeAdResults(string $status, ?int $adId = null, ?string $error = null)
-    {
-        return [
-            AdsFeed::COL_AD_ID     => $adId ?: '',
-            'asdark:export_status' => $status,
-            'asdark:export_error'  => (string)$error
-        ];
+        return count(array_filter(array_values($errors)));
     }
 
 }

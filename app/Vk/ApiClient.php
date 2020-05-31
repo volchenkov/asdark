@@ -339,24 +339,6 @@ class ApiClient
         return $errors;
     }
 
-    private function editWallPost($post)
-    {
-        $fields = [
-            'owner_id' => $post[AdsFeed::COL_POST_OWNER_ID],
-            'post_id'  => $post[AdsFeed::COL_POST_ID],
-        ];
-        if (isset($post[AdsFeed::COL_POST_TEXT])) {
-            $fields['message'] = $post[AdsFeed::COL_POST_TEXT];
-        }
-        if (isset($post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
-            $fields['link_button'] = $post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
-        }
-        if (isset($post[AdsFeed::COL_POST_LINK_IMAGE])) {
-            $fields['attachments'] = $post[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
-            $fields['link_image'] = $post[AdsFeed::COL_POST_LINK_IMAGE];
-        }
-        $this->get('wall.editAdsStealth', $fields);
-    }
 
     private function get(string $method, array $queryParams = [])
     {

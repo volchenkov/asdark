@@ -45,6 +45,10 @@ class VkExportAds extends Command
      */
     protected $description = 'Export ads sheet to VK';
 
+    const COL_STATUS = 'asdark:export_status';
+    const COL_ERR = 'asdark:export_error';
+    const FEED_SHEET_TITLE = 'Sheet1';
+
     private GoogleApiClient $google;
     private VkApiClient $vk;
 
@@ -90,34 +94,41 @@ class VkExportAds extends Command
         if (!$spreadsheetId) {
             throw new \RuntimeException('Spreadsheet ID is undefined');
         }
-
-        $sheetTitle = 'Sheet1';
-        $feed = $this->google->getCells($spreadsheetId, $sheetTitle);
-
+        $feed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
         if (count($feed) == 0) {
             $this->line('No ads to export');
             return 0;
         }
-
         // add result columns if not exists
-        $headers = array_keys(array_replace($feed[0], array_fill_keys(['asdark:export_status', 'asdark:export_error'], null)));
-
+        $headers = array_keys(array_replace($feed[0], array_fill_keys([self::COL_STATUS, self::COL_ERR], null)));
         if (!in_array(AdsFeed::COL_AD_ID, $headers)) {
             throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
         }
-        $this->google->writeCells($spreadsheetId, $sheetTitle . '!1:1', [$headers]);
+        $this->google->writeCells($spreadsheetId, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
 
         $errors = $this->vk->updateAds($feed);
 
         $result = [];
         foreach ($feed as $item) {
-            $error = $errors[$item[AdsFeed::COL_AD_ID]] ?? '';
-            $result[] = [$error ? 'failed' : 'done', $error];
+            $err = $errors[$item[AdsFeed::COL_AD_ID]];
+
+            // если строка не обрабатывалась - оставим все как есть
+            if ($err === null) {
+                $result[] = [$item[self::COL_STATUS] ?? null, $item[self::COL_ERR] ?? null];
+            }
+            // если состояние приведено к необходимому
+            if ($err === '') {
+                $result[] = ['done', ''];
+            }
+            // если при обработке произошла ошибка
+            if ($err) {
+                $result[] = ['failed', $err];
+            }
         }
 
         $A1 = GoogleApiClient::getA1Cols($headers);
-        $range = "{$sheetTitle}!{$A1['asdark:export_status']}2:{$A1['asdark:export_error']}".(1+count($feed));
-        $this->google->writeCells($spreadsheetId, $range , $result);
+        $range = "{$A1[self::COL_STATUS]}2:{$A1[self::COL_ERR]}".(1+count($feed));
+        $this->google->writeCells($spreadsheetId, self::FEED_SHEET_TITLE .'!'.$range, $result);
 
         return count(array_filter(array_values($errors)));
     }

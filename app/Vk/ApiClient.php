@@ -243,29 +243,53 @@ class ApiClient
         return $rsp['post_id'];
     }
 
-    public function updateAds(array $feed): array
+
+    /**
+     * @param array $feed
+     * @param int $adsPerExecution
+     * @return array
+     */
+    public function updateAds(array $feed, int $adsPerExecution = 3): array
     {
         $adIds = array_filter(array_unique(array_column($feed, AdsFeed::COL_AD_ID)));
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
         $errors = array_fill_keys($adIds,null);
         $commands = $this->getUpdateCommands($feed, $currentState);
-        foreach (array_chunk($commands, 10) as $chunk) {
-            $rsp = $this->post('execute', ['code' => $this->formatCode($chunk)]);
+        foreach (array_chunk($commands, $adsPerExecution, true) as $chunk) {
+            try {
+                $rsp = $this->post('execute', [
+                    'code' => $this->formatCode(call_user_func_array('array_merge', $chunk))
+                ]);
 
-            if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
-                throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
-            }
-
-            foreach ($rsp['ads'] as $result) {
-                if (isset($result['error_desc'])) {
-                    $errors[$result['id']] .= "Не удалось обновить объявление: {$result['error_code']} {$result['error_desc']}. ";
+                if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
+                    throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
                 }
-            }
 
-            foreach ($rsp['posts'] as $result) {
-                if (!isset($result['ok']) || $result['ok'] != 1) {
-                    $errors[$result['adId']] .= "Не удалось обновить пост. ";
+                foreach ($chunk as $adId => $_) {
+                    $errors[$adId] = '';
+                }
+
+                foreach ($rsp['ads'] as $r) {
+                    if (isset($r['error_desc'])) {
+                        $errors[$r['id']] .= "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ";
+                    }
+                }
+
+                foreach ($rsp['posts'] as $r) {
+                    if (!isset($r['ok']) || $r['ok'] != 1) {
+                        $errors[$r['adId']] .= "Не удалось обновить пост. ";
+                    }
+                }
+            } catch (CaptchaException $e) {
+                foreach ($chunk as $adId => $_) {
+                    $errors[$adId] .= "Нужна капча - {$e->img}";
+
+                    break;
+                }
+            } catch (\Exception $e) {
+                foreach ($chunk as $adId => $_) {
+                    $errors[$adId] .= "Не удалось обновить обновление: {$e->getMessage()}";
                 }
             }
         }
@@ -300,29 +324,33 @@ class ApiClient
     private function getUpdateCommands(array $feed, array $currentState): array
     {
         $feedCols = array_keys($feed[0]);
-        $commands = [];
 
+        $commands = [];
         if (AdsFeed::dependsOn('ad', $feedCols)) {
             foreach($feed as $ad) {
-                $i = [
-                    'ad_id' => $ad[AdsFeed::COL_AD_ID],
-                ];
+                $adId = $ad[AdsFeed::COL_AD_ID];
+                $i = ['ad_id' => $adId];
                 if (isset($ad[AdsFeed::COL_AD_NAME]) && $adName = $ad[AdsFeed::COL_AD_NAME]) {
                     $i['name'] = $adName;
                 }
                 if (isset($ad[AdsFeed::COL_AD_LINK_URL]) && $adUrl = $ad[AdsFeed::COL_AD_LINK_URL]) {
                     $i['link_url'] = $adUrl;
                 }
-                array_push($commands, [
+                if (!isset($commands[$adId])) {
+                    $commands[$adId] = [];
+                }
+                $commands[$adId][] = [
                     'type' => 'updateAd',
-                    'item'   => $i
-                ]);
+                    'item' => $i
+                ];
             }
         }
 
         if (AdsFeed::dependsOn('post', $feedCols)) {
             foreach ($feed as $ad) {
-                $ad = array_replace($currentState[$ad[AdsFeed::COL_AD_ID]], $ad);
+                $adId = $ad[AdsFeed::COL_AD_ID];
+
+                $ad = array_replace($currentState[$adId], $ad);
                 $p = [
                     'owner_id' => $ad[AdsFeed::COL_POST_OWNER_ID],
                     'post_id'  => $ad[AdsFeed::COL_POST_ID],
@@ -347,24 +375,47 @@ class ApiClient
                     }
                 }
 
-                array_push($commands, [
+                if (!isset($commands[$adId])) {
+                    $commands[$adId] = [];
+                }
+                $commands[$adId][] = [
                     'type' => 'updatePost',
                     'item' => $p,
-                    'adId' => $ad[AdsFeed::COL_AD_ID]
-                ]);
+                    'adId' => $adId
+                ];
             }
         }
 
         return $commands;
     }
 
+    /**
+     * @param string $method
+     * @param array $body
+     * @param array $queryParams
+     * @return mixed
+     * @throws CaptchaException
+     */
     private function post(string $method, array $body = [], array $queryParams = [])
     {
         $rsp = $this->http->post($method, ['form_params' => $body, 'query' => $this->addDefaultParams($queryParams)]);
         $data = \json_decode($rsp->getBody()->getContents(), true);
 
-        if (is_null($data) || !array_key_exists('response', $data)) {
-            throw new \RuntimeException("Failed to decode response: {$method} " . (string)$rsp->getBody());
+        if (!is_array($data)) {
+            throw new \RuntimeException("Failed to decode response: {$method} - " . (string)$rsp->getBody());
+        }
+        if (isset($data['error']) && $err = $data['error']) {
+            $msg = $err['error_msg'] ?? null;
+            if ($msg == 'Captcha needed') {
+                $e = new CaptchaException('Captcha needed');
+                $e->sid = $err['captcha_sid'];
+                $e->img = $err['captcha_img'];
+
+                throw $e;
+            }
+        }
+        if (!array_key_exists('response', $data)) {
+            throw new \RuntimeException("Unexpected response: {$method} " . (string)$rsp->getBody());
         }
 
         sleep(2);
@@ -383,6 +434,7 @@ class ApiClient
         }
 
         sleep(1);
+
         return $data['response'];
     }
 

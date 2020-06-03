@@ -15,6 +15,7 @@
                     id="campaign_ids"
                     class="form-control"
                     multiple
+                    size="{{ count($campaigns) }}"
                     required>
                 @foreach ($campaigns as $campaign)
                     <option value="{{ $campaign['id'] }}"> {{ $campaign['name'] }}</option>
@@ -29,6 +30,7 @@
                     id="ad_fields"
                     class="form-control"
                     multiple
+                    size="{{ count($fields) }}"
                     required>
                 @foreach ($fields as $id => $field)
                     <option value="{{ $id }}"> {{ $field['desc'] }} ({{ $id }})</option>

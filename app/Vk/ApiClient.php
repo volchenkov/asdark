@@ -150,8 +150,11 @@ class ApiClient
         if (AdsFeed::dependsOn('post', $fields)) {
             $adPostIds = [];
             foreach ($ads as $ad) {
-                $adPostIds[$ad['id']] = preg_replace('/^http(s)?:\/\/vk.com\/wall/', '',
-                    $ad['layout']['link_url'] ?? '');
+                $link = $ad['layout']['link_url'] ?? '';
+                $re = '/^http(s)?:\/\/vk.com\/wall/';
+                if (preg_match($re, $link)) {
+                    $adPostIds[$ad['id']] = preg_replace($re, '', $link);
+                }
             }
 
             $postIds = array_filter(array_unique(array_values($adPostIds)));
@@ -247,8 +250,8 @@ class ApiClient
 
         $errors = array_fill_keys($adIds,null);
         $commands = $this->getUpdateCommands($feed, $currentState);
-        foreach (array_chunk($commands, 25) as $chunk) {
-            $rsp = $this->get('execute', ['code' => $this->formatCode($chunk)]);
+        foreach (array_chunk($commands, 10) as $chunk) {
+            $rsp = $this->post('execute', ['code' => $this->formatCode($chunk)]);
 
             if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
                 throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
@@ -275,7 +278,7 @@ class ApiClient
         $forType = fn($type) => fn($command) => $command['type'] == $type;
 
         $code = "var a = '{$this->account}';\n";
-        $code .= "var result = {'ads': null, 'posts': []};\n";
+        $code .= "var result = {'ads': [], 'posts': []};\n";
 
         $adsUpdates = array_filter($commands, $forType('updateAd'));
         foreach (array_chunk($adsUpdates, 5) as $updates) {
@@ -355,6 +358,19 @@ class ApiClient
         return $commands;
     }
 
+    private function post(string $method, array $body = [], array $queryParams = [])
+    {
+        $rsp = $this->http->post($method, ['form_params' => $body, 'query' => $this->addDefaultParams($queryParams)]);
+        $data = \json_decode($rsp->getBody()->getContents(), true);
+
+        if (is_null($data) || !array_key_exists('response', $data)) {
+            throw new \RuntimeException("Failed to decode response: {$method} " . (string)$rsp->getBody());
+        }
+
+        sleep(2);
+
+        return $data['response'];
+    }
 
     private function get(string $method, array $queryParams = [])
     {

@@ -45,12 +45,16 @@ class VkExportAds extends Command
      */
     protected $description = 'Export ads sheet to VK';
 
-    const COL_STATUS = 'asdark:export_status';
-    const COL_ERR = 'asdark:export_error';
     const FEED_SHEET_TITLE = 'Sheet1';
 
     private GoogleApiClient $google;
     private VkApiClient $vk;
+
+    const STATUS_TEXT = [
+        VkApiClient::UPDATE_STATUS_DONE                => 'done',
+        VkApiClient::UPDATE_STATUS_PARTIAL_FAILURE     => 'done_with_errors',
+        VkApiClient::UPDATE_STATUS_PARTIAL_INTERRUPTED => 'interrupted',
+    ];
 
     /**
      * Create a new command instance.
@@ -78,8 +82,8 @@ class VkExportAds extends Command
         }
         try {
             $this->google->updateOperationStatus($operation['id'], 'processing');
-            $errors = $this->exportAds($operation);
-            $this->google->updateOperationStatus($operation['id'], $errors ? 'done_with_errors' : 'done');
+            $status = $this->exportAds($operation);
+            $this->google->updateOperationStatus($operation['id'], self::STATUS_TEXT[$status]);
         } catch (\Throwable $e) {
             error_log('Failed export ads: ' . $e->getMessage());
             $this->google->updateOperationStatus($operation['id'], 'failed', $e->getMessage());
@@ -94,43 +98,55 @@ class VkExportAds extends Command
         if (!$spreadsheetId) {
             throw new \RuntimeException('Spreadsheet ID is undefined');
         }
-        $feed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
-        if (count($feed) == 0) {
-            $this->line('No ads to export');
-            return 0;
+        $remoteFeed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
+
+        if (count($remoteFeed) == 0) {
+            $this->line('Empty feed');
+            return VkApiClient::UPDATE_STATUS_DONE;
         }
-        // add result columns if not exists
-        $headers = array_keys(array_replace($feed[0], array_fill_keys([self::COL_STATUS, self::COL_ERR], null)));
+
+        $headers = array_keys($remoteFeed[0]);
         if (!in_array(AdsFeed::COL_AD_ID, $headers)) {
             throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
         }
-        $this->google->writeCells($spreadsheetId, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
 
-        $errors = $this->vk->updateAds($feed);
+        $adkCols = [
+            AdsFeed::COL_ADK_STATUS,
+            AdsFeed::COL_ADK_ERR,
+            AdsFeed::COL_ADK_CAPTCHA,
+            AdsFeed::COL_ADK_CAPTCHA_CODE
+        ];
 
-        $result = [];
-        foreach ($feed as $item) {
-            $err = $errors[$item[AdsFeed::COL_AD_ID]];
-
-            // если строка не обрабатывалась - оставим все как есть
-            if ($err === null) {
-                $result[] = [$item[self::COL_STATUS] ?? null, $item[self::COL_ERR] ?? null];
+        $feed = [];
+        foreach ($remoteFeed as $row) {
+            foreach ($adkCols as $col) {
+                $row[$col] = $row[$col] ?? null;
             }
-            // если состояние приведено к необходимому
-            if ($err === '') {
-                $result[] = ['done', ''];
-            }
-            // если при обработке произошла ошибка
-            if ($err) {
-                $result[] = ['failed', $err];
-            }
+            $feed[$row[AdsFeed::COL_AD_ID]] = $row;
         }
 
-        $A1 = GoogleApiClient::getA1Cols($headers);
-        $range = "{$A1[self::COL_STATUS]}2:{$A1[self::COL_ERR]}".(1+count($feed));
-        $this->google->writeCells($spreadsheetId, self::FEED_SHEET_TITLE .'!'.$range, $result);
+        $incompleteAds = array_filter($feed, fn ($i) => $i[AdsFeed::COL_ADK_STATUS] !== 'done');
+        if (count($incompleteAds) === 0) {
+            $this->line('No incompleted ads');
+            return VkApiClient::UPDATE_STATUS_DONE;
+        }
+        list($status, $updatedFeed) = $this->vk->updateAds($incompleteAds);
 
-        return count(array_filter(array_values($errors)));
+        $feed = array_values(array_replace($feed, $updatedFeed));
+
+        $headers = array_keys($feed[0]);
+        $this->google->writeCells($spreadsheetId, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
+
+        $A1 = GoogleApiClient::getA1Cols($headers);
+
+        $result = [];
+        foreach ($feed as $row) {
+            $result[] = array_intersect_key($row, array_fill_keys($adkCols, null));
+        }
+        $range = self::FEED_SHEET_TITLE . '!' . "{$A1[$adkCols[0]]}2:{$A1[$adkCols[count($adkCols) - 1]]}" . (1 + count($result));
+        $this->google->writeCells($spreadsheetId, $range, $result);
+
+        return $status;
     }
 
 }

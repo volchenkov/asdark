@@ -6,6 +6,11 @@ namespace App\Vk;
 class AdsFeed
 {
 
+    const COL_ADK_STATUS = 'adk:export_status';
+    const COL_ADK_ERR = 'adk:export_error';
+    const COL_ADK_CAPTCHA = 'adk:captcha';
+    const COL_ADK_CAPTCHA_CODE = 'adk:captcha_code';
+
     const COL_CAMPAIGN_ID = 'campaign_id';
     const COL_CAMPAIGN_NAME = 'campaign_name';
     const COL_AD_ID = 'ad_id';

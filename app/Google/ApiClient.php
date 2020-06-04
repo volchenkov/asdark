@@ -100,7 +100,7 @@ class ApiClient
 
         $values = new \Google_Service_Sheets_ValueRange();
         $values->setRange($range);
-        $values->setValues($data);
+        $values->setValues(array_map('array_values', $data));
 
         $request = new \Google_Service_Sheets_BatchUpdateValuesRequest();
         $request->setValueInputOption('RAW');

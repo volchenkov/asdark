@@ -10,6 +10,10 @@ use \GuzzleHttp\Client;
 class ApiClient
 {
 
+    const UPDATE_STATUS_DONE = 0;
+    const UPDATE_STATUS_PARTIAL_FAILURE = 1;
+    const UPDATE_STATUS_PARTIAL_INTERRUPTED = 2;
+
     const AD_FORMAT_TEXT = 1;
     const AD_FORMAT_BIG_ING = 2;
     const AD_FORMAT_PROMO = 4;
@@ -245,61 +249,99 @@ class ApiClient
 
 
     /**
-     * @param array $feed
+     * @param array $feed indexed by ad id
      * @param int $adsPerExecution
-     * @return array
+     * @return array[]
      */
     public function updateAds(array $feed, int $adsPerExecution = 3): array
     {
-        $adIds = array_filter(array_unique(array_column($feed, AdsFeed::COL_AD_ID)));
+        $adIds = array_keys($feed);
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
-        $errors = array_fill_keys($adIds,null);
         $commands = $this->getUpdateCommands($feed, $currentState);
+        $fails = 0;
         foreach (array_chunk($commands, $adsPerExecution, true) as $chunk) {
             try {
-                $rsp = $this->post('execute', [
-                    'code' => $this->formatCode(call_user_func_array('array_merge', $chunk))
-                ]);
+                $params = ['code' => $this->formatCode(call_user_func_array('array_merge', $chunk))];
+                foreach (array_keys($chunk) as $adId) {
+                    $captcha = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA];
+                    if ($captcha && strpos($captcha, 'sid=') !== false) {
+                        $query = [];
+                        parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
+                        $sid = $query['sid'];
+
+                        if ($code = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA_CODE]) {
+                            $params = array_replace($params, [
+                                'captcha_sid' => $sid,
+                                'captcha_key' => $code
+                            ]);
+                        }
+                    }
+                }
+                $rsp = $this->post('execute', $params);
 
                 if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
                     throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
                 }
 
                 foreach ($chunk as $adId => $_) {
-                    $errors[$adId] = '';
+                    $feed[$adId] = array_replace($feed[$adId], [
+                        AdsFeed::COL_ADK_STATUS       => 'done',
+                        AdsFeed::COL_ADK_ERR          => '',
+                        AdsFeed::COL_ADK_CAPTCHA      => '',
+                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
+                    ]);
                 }
 
                 foreach ($rsp['ads'] as $r) {
                     if (isset($r['error_desc'])) {
-                        $errors[$r['id']] .= "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ";
+                        $fails++;
+                        $feed[$r['id']] = array_replace($feed[$r['id']], [
+                            AdsFeed::COL_ADK_STATUS => 'failed',
+                            AdsFeed::COL_ADK_ERR    => "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ",
+                        ]);
                     }
                 }
 
                 foreach ($rsp['posts'] as $r) {
                     if (!isset($r['ok']) || $r['ok'] != 1) {
-                        $errors[$r['adId']] .= "Не удалось обновить пост. ";
+                        $fails++;
+                        $feed[$r['adId']] = array_replace($feed[$r['adId']], [
+                            AdsFeed::COL_ADK_STATUS => 'failed',
+                            AdsFeed::COL_ADK_ERR    => $feed[$r['adId']][AdsFeed::COL_ADK_ERR] . "Не удалось обновить пост. ",
+                        ]);
                     }
                 }
             } catch (CaptchaException $e) {
                 foreach ($chunk as $adId => $_) {
-                    $errors[$adId] .= "Нужна капча - {$e->img}";
+                    $feed[$adId] = array_replace($feed[$adId], [
+                        AdsFeed::COL_ADK_STATUS       => 'failed',
+                        AdsFeed::COL_ADK_ERR          => "Для продолжения нужна капча",
+                        AdsFeed::COL_ADK_CAPTCHA      => $e->img,
+                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
+                    ]);
 
-                    break;
+                    return [self::UPDATE_STATUS_PARTIAL_INTERRUPTED, $feed];
                 }
             } catch (\Exception $e) {
                 foreach ($chunk as $adId => $_) {
-                    $errors[$adId] .= "Не удалось обновить обновление: {$e->getMessage()}";
+                    $fails++;
+                    $feed[$adId] = array_replace($feed[$adId], [
+                        AdsFeed::COL_ADK_STATUS       => 'failed',
+                        AdsFeed::COL_ADK_ERR          => "Не удалось обновить обновление: {$e->getMessage()}",
+                        AdsFeed::COL_ADK_CAPTCHA      => '',
+                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
+                    ]);
                 }
             }
         }
 
-        return $errors;
+        return [$fails ? self::UPDATE_STATUS_PARTIAL_FAILURE : self::UPDATE_STATUS_DONE, $feed];
     }
 
     private function formatCode(array $commands): string
     {
-        $forType = fn($type) => fn($command) => $command['type'] == $type;
+        $forType = fn ($type) => fn ($command) => $command['type'] == $type;
 
         $code = "var a = '{$this->account}';\n";
         $code .= "var result = {'ads': [], 'posts': []};\n";
@@ -323,11 +365,11 @@ class ApiClient
 
     private function getUpdateCommands(array $feed, array $currentState): array
     {
-        $feedCols = array_keys($feed[0]);
+        $feedCols = array_keys(array_values($feed)[0]);
 
         $commands = [];
         if (AdsFeed::dependsOn('ad', $feedCols)) {
-            foreach($feed as $ad) {
+            foreach ($feed as $ad) {
                 $adId = $ad[AdsFeed::COL_AD_ID];
                 $i = ['ad_id' => $adId];
                 if (isset($ad[AdsFeed::COL_AD_NAME]) && $adName = $ad[AdsFeed::COL_AD_NAME]) {

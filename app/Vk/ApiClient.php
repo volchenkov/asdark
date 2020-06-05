@@ -253,16 +253,16 @@ class ApiClient
      * @param int $adsPerExecution
      * @return array[]
      */
-    public function updateAds(array $feed, int $adsPerExecution = 3): array
+    public function updateAds(array $feed, int $adsPerExecution = 5): array
     {
         $adIds = array_keys($feed);
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
-        $commands = $this->getUpdateCommands($feed, $currentState);
         $fails = 0;
-        foreach (array_chunk($commands, $adsPerExecution, true) as $chunk) {
+        foreach (array_chunk($feed, $adsPerExecution, true) as $chunk) {
             try {
-                $params = ['code' => $this->formatCode(call_user_func_array('array_merge', $chunk))];
+                $commands = $this->getUpdateCommands($chunk, $currentState);
+                $params = ['code' => $this->formatCode($commands)];
                 foreach (array_keys($chunk) as $adId) {
                     $captcha = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA];
                     if ($captcha && strpos($captcha, 'sid=') !== false) {
@@ -312,6 +312,9 @@ class ApiClient
                         ]);
                     }
                 }
+
+                // anti captcha
+                sleep(random_int(60, 80));
             } catch (CaptchaException $e) {
                 foreach ($chunk as $adId => $_) {
                     $feed[$adId] = array_replace($feed[$adId], [
@@ -365,65 +368,77 @@ class ApiClient
 
     private function getUpdateCommands(array $feed, array $currentState): array
     {
-        $feedCols = array_keys(array_values($feed)[0]);
-
         $commands = [];
-        if (AdsFeed::dependsOn('ad', $feedCols)) {
-            foreach ($feed as $ad) {
-                $adId = $ad[AdsFeed::COL_AD_ID];
-                $i = ['ad_id' => $adId];
-                if (isset($ad[AdsFeed::COL_AD_NAME]) && $adName = $ad[AdsFeed::COL_AD_NAME]) {
-                    $i['name'] = $adName;
-                }
-                if (isset($ad[AdsFeed::COL_AD_LINK_URL]) && $adUrl = $ad[AdsFeed::COL_AD_LINK_URL]) {
-                    $i['link_url'] = $adUrl;
-                }
-                if (!isset($commands[$adId])) {
-                    $commands[$adId] = [];
-                }
-                $commands[$adId][] = [
+        foreach ($feed as $ad) {
+            $adId = $ad[AdsFeed::COL_AD_ID];
+            $currentAd = $currentState[$adId];
+
+            $needUpdate = function ($field) use($ad, $currentAd) {
+                return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
+            };
+
+            $u = [];
+            if ($needUpdate(AdsFeed::COL_AD_NAME)) {
+                $u['name'] = $ad[AdsFeed::COL_AD_NAME];
+            }
+            if ($needUpdate(AdsFeed::COL_AD_LINK_URL)) {
+                $u['link_url'] = $ad[AdsFeed::COL_AD_LINK_URL];
+            }
+            if ($u) {
+                $commands[] = [
                     'type' => 'updateAd',
-                    'item' => $i
+                    'item' => array_replace(['ad_id' => $adId], $u)
                 ];
             }
-        }
 
-        if (AdsFeed::dependsOn('post', $feedCols)) {
-            foreach ($feed as $ad) {
-                $adId = $ad[AdsFeed::COL_AD_ID];
+            $p = [];
+            if ($needUpdate(AdsFeed::COL_POST_TEXT)) {
+                $p['message'] = $ad[AdsFeed::COL_POST_TEXT];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_URL)) {
+                $p['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE)) {
+                $p['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE)) {
+                $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_LINK_IMAGE)) {
+                $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID)) {
+                $p['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
 
-                $ad = array_replace($currentState[$adId], $ad);
-                $p = [
-                    'owner_id' => $ad[AdsFeed::COL_POST_OWNER_ID],
-                    'post_id'  => $ad[AdsFeed::COL_POST_ID],
-                ];
-                if (isset($ad[AdsFeed::COL_POST_TEXT])) {
-                    $p['message'] = $ad[AdsFeed::COL_POST_TEXT];
+                // параметр link_video может быть указан только вместе с параметрами link_button, link_title.
+                // если они не были заданы для изменения, использовать существующее значение
+                if (!isset($p['link_button'])) {
+                    $p['link_button'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
                 }
-                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE])) {
-                    $p['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+                if (!isset($p['link_title'])) {
+                    $p['link_title'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
                 }
-                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE])) {
-                    $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
-                }
-                if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL])) {
-                    $p['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+            }
 
-                    if (isset($ad[AdsFeed::COL_POST_LINK_IMAGE])) {
-                        $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
-                    }
-                    if (isset($ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID])) {
-                        $p['link_video'] = "{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
-                    }
-                }
+            // При указании параметров , необходимо указать целевую ссылку в поле attachments.
+            $needAttachment = array_intersect_key($p, array_flip([
+                'link_button',
+                'link_title',
+                'link_image',
+                'link_video'
+            ]));
+            if ($needAttachment && !isset($p['attachments'])) {
+                $p['attachments'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+            }
 
-                if (!isset($commands[$adId])) {
-                    $commands[$adId] = [];
-                }
-                $commands[$adId][] = [
+            if ($p) {
+                $commands[] = [
                     'type' => 'updatePost',
-                    'item' => $p,
-                    'adId' => $adId
+                    'adId' => $adId,
+                    'item' => array_replace([
+                        'owner_id' => $currentState[$adId][AdsFeed::COL_POST_OWNER_ID],
+                        'post_id'  => $currentState[$adId][AdsFeed::COL_POST_ID]
+                    ], $p),
                 ];
             }
         }
@@ -459,8 +474,6 @@ class ApiClient
         if (!array_key_exists('response', $data)) {
             throw new \RuntimeException("Unexpected response: {$method} " . (string)$rsp->getBody());
         }
-
-        sleep(2);
 
         return $data['response'];
     }

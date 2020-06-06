@@ -12,56 +12,55 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
         <!-- Fonts -->
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
+
+        <style>
+            html,body {
+                height: 100%;
+            }
+        </style>
     </head>
     <body>
-        <header>
-            <div class="collapse bg-dark" id="navbarHeader">
-                <div class="container">
-                    <div class="row pt-4">
+        <div class="container-fluid h-100">
+            <div class="row h-100">
+                <div class="col-2 navbar-dark bg-dark shadow-sm pt-4">
+                    <div class="mb-3">
+                        <a href="/"
+                           class="navbar-brand">
+                            <strong>ASDARK</strong>
+                        </a>
+                    </div>
+
+                    <ul class="nav flex-column flex-nowrap overflow-hidden">
+                        <li class="nav-item">
+                            <a href="/vk_auth"
+                               class="nav-linksmall text-white mr-3">Подключить ВК</a>
+                        </li>
                         @if($vkAccount)
-                        <div class="col-12 my-1">
-                            <a href="/exports_confirm" class="text-white mr-3">Запустить загрузку</a>
-                            <a href="/exports" class="text-white mr-3">Загрузки</a>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <a href="/ads_edit_form" class="small text-white mr-3">Редактирование объявлений</a>
-                        </div>
+                            <span class="text-muted">подключен <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}</span>
                         @endif
 
-                        <div class="col-12 my-2">
-                            <a href="/vk_auth" class="text-white">Подключить ВК</a>
-                            @if($vkAccount)
-                            <span class="text-muted"> - сейчас подключен <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}</span>
-                            @endif
-                        </div>
-                    </div>
+                        @if($vkAccount)
+                            <li class="nav-item">
+                                <a href="/exports"
+                                   class="nav-linksmall text-white mr-3">Запустить загрузку</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/exports"
+                                   class="nav-linksmall text-white mr-3">Загрузки</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/ads_edit_form"
+                                   class="nav-linksmall text-white mr-3">Редактирование объявлений</a>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
+                <div class="col pt-4">
+                    @yield('content')
+                </div>
+                <div class="col-1 pt-4">
                 </div>
             </div>
-            <div class="navbar navbar-dark bg-dark shadow-sm">
-                <div class="container d-flex justify-content-between">
-                    <a href="/"
-                       data-toggle="collapse"
-                       data-target="#navbarHeader"
-                       aria-controls="navbarHeader"
-                       aria-expanded="false"
-                       aria-label="Toggle navigation"
-                       class="navbar-brand d-flex align-items-center">
-                        <strong>ASDARK</strong>
-                    </a>
-                    <button class="navbar-toggler"
-                            type="button"
-                            data-toggle="collapse"
-                            data-target="#navbarHeader"
-                            aria-controls="navbarHeader"
-                            aria-expanded="false"
-                            aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-            </div>
-        </header>
-        <div class="container pt-5">
-            @yield('content')
         </div>
     </body>
 </html>

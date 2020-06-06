@@ -24,7 +24,6 @@
                             <a href="/exports" class="text-white mr-3">Загрузки</a>
                         </div>
                         <div class="col-12 mb-3">
-                            <a href="/cds_form" class="small text-white mr-3">Создание объявлений ЦДС</a>
                             <a href="/ads_edit_form" class="small text-white mr-3">Редактирование объявлений</a>
                         </div>
                         @endif

@@ -190,67 +190,6 @@ class ApiClient
         return $rows;
     }
 
-    public function createAd(array $ad): int
-    {
-        $fields = [
-            'ad_format'    => $ad[AdsFeed::COL_AD_FORMAT],
-            'autobidding'  => $ad[AdsFeed::COL_AUTOBIDDING],
-            'campaign_id'  => $ad[AdsFeed::COL_CAMPAIGN_ID],
-            'name'         => $ad[AdsFeed::COL_AD_NAME],
-            'cost_type'    => $ad[AdsFeed::COL_COST_TYPE],
-            'goal_type'    => $ad[AdsFeed::COL_GOAL_TYPE],
-            'category1_id' => $ad[AdsFeed::COL_AD_CATEGORY1],
-            'country'      => $ad[AdsFeed::COL_AD_TARGETING_COUNTRY],
-            'cities'       => $ad[AdsFeed::COL_AD_TARGETING_CITIES],
-            'day_limit'    => $ad[AdsFeed::COL_AD_DAY_LIMIT],
-        ];
-        if ($ad[AdsFeed::COL_COST_TYPE] == self::AD_COST_TYPE_OPTIMIZED_VIEWS) {
-            $fields['ocpm'] = $ad[AdsFeed::COL_AD_OCPM];
-        }
-        if (AdsFeed::dependsOn('post', array_keys($ad))) {
-            $postId = $this->createWallPost($ad);
-            sleep(4); // to prevent 603  error "Invalid community post"
-            $fields['link_url'] = "http://vk.com/wall{$ad[AdsFeed::COL_POST_OWNER_ID]}_{$postId}";
-        }
-        $result = $this->get('ads.createAds', ['data' => json_encode([$fields])]);
-
-        if (isset($result['error_desc'])) {
-            // appears occasionally, they say due to servers out of sync
-            if (strpos($result['error_desc'], 'Invalid community post')) {
-                sleep(4);
-                $result = $this->get('ads.createAds', ['data' => json_encode([$fields])]);
-            }
-        }
-
-        $adId = $result[0]['id'] ?? null;
-        if (!$adId) {
-            throw new \RuntimeException('Failed to create ad: ' . json_encode($result));
-        }
-
-        return intval($adId);
-    }
-
-    private function createWallPost(array $post): int
-    {
-        $fields = [
-            'attachments' => $post[AdsFeed::COL_POST_ATTACHMENT_LINK_URL],
-            'owner_id'    => $post[AdsFeed::COL_POST_OWNER_ID],
-            'message'     => $post[AdsFeed::COL_POST_TEXT],
-            'signed'      => 0,
-            'guid'        => uniqid('stealth_post'),
-            'link_button' => $post[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE],
-            'link_image'  => $post[AdsFeed::COL_POST_LINK_IMAGE]
-        ];
-
-        $rsp = $this->get('wall.postAdsStealth', $fields);
-        if (!isset($rsp['post_id'])) {
-            throw new \RuntimeException("Failed to create post: " . json_encode($rsp));
-        }
-
-        return $rsp['post_id'];
-    }
-
-
     /**
      * @param array $feed indexed by ad id
      * @param int $adsPerExecution

@@ -143,7 +143,7 @@ class AdsFeed
             'desc'     => 'Дней лимит трат на объявление, руб'
         ],
         self::COL_POST_ATTACHMENT_LINK_VIDEO_ID => [
-            'editable' => false,
+            'editable' => true,
             'entity'   => 'post',
             'desc'     => 'ID видео поста'
         ],

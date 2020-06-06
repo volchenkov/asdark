@@ -196,7 +196,7 @@ class ApiClient
      * @return array[]
      * @throws \Exception
      */
-    public function updateAds(array $feed, int $adsPerExecution = 4): array
+    public function updateAds(array $feed, int $adsPerExecution = 5): array
     {
         $adIds = array_keys($feed);
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
@@ -278,14 +278,14 @@ class ApiClient
                         AdsFeed::COL_ADK_CAPTCHA_CODE => ''
                     ]);
                 }
-            } finally {
-                // anti captcha
-                $remaining -= count($chunk);
-                if ($remaining) {
-                    $sleep = random_int(120, 130);
-                    echo "sleep now {$sleep}\n";
-                    sleep($sleep);
-                }
+            }
+
+            // anti captcha
+            $remaining -= count($chunk);
+            if ($remaining) {
+                $sleep = random_int(120, 130);
+                echo "sleep now {$sleep}\n";
+                sleep($sleep);
             }
         }
 

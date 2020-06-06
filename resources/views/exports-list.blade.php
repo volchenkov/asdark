@@ -19,7 +19,9 @@
                     <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
                     @if(!in_array($export['status'], ['pending', 'done']))
                         <div class="my-2">
-                            <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}"><button type="button" class="btn btn-outline-secondary btn-sm">повторить</button></a>
+                            <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}">
+                                <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
+                            </a>
                         </div>
                     @endif
                 </td>

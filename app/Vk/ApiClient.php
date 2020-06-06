@@ -30,16 +30,19 @@ class ApiClient
     private string $account;
     private string $accessToken;
     private ?string $clientId;
-    private Client $http;
 
     private function __construct(string $account, string $accessToken, ?string $clientId = null)
     {
         $this->account = $account;
         $this->accessToken = $accessToken;
         $this->clientId = $clientId;
-        $this->http = new Client([
+    }
+
+    private function api(): Client
+    {
+        return new Client([
             'base_uri' => 'https://api.vk.com/method/',
-            'timeout'  => 30.0
+            'timeout'  => 60.0
         ]);
     }
 
@@ -252,13 +255,15 @@ class ApiClient
      * @param array $feed indexed by ad id
      * @param int $adsPerExecution
      * @return array[]
+     * @throws \Exception
      */
-    public function updateAds(array $feed, int $adsPerExecution = 5): array
+    public function updateAds(array $feed, int $adsPerExecution = 4): array
     {
         $adIds = array_keys($feed);
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
         $fails = 0;
+        $remaining = count($feed);
         foreach (array_chunk($feed, $adsPerExecution, true) as $chunk) {
             try {
                 $commands = $this->getUpdateCommands($chunk, $currentState);
@@ -313,8 +318,6 @@ class ApiClient
                     }
                 }
 
-                // anti captcha
-                sleep(random_int(60, 80));
             } catch (CaptchaException $e) {
                 foreach ($chunk as $adId => $_) {
                     $feed[$adId] = array_replace($feed[$adId], [
@@ -335,6 +338,14 @@ class ApiClient
                         AdsFeed::COL_ADK_CAPTCHA      => '',
                         AdsFeed::COL_ADK_CAPTCHA_CODE => ''
                     ]);
+                }
+            } finally {
+                // anti captcha
+                $remaining -= count($chunk);
+                if ($remaining) {
+                    $sleep = random_int(120, 130);
+                    echo "sleep now {$sleep}\n";
+                    sleep($sleep);
                 }
             }
         }
@@ -420,25 +431,33 @@ class ApiClient
                 }
             }
 
-            // При указании параметров , необходимо указать целевую ссылку в поле attachments.
-            $needAttachment = array_intersect_key($p, array_flip([
-                'link_button',
-                'link_title',
-                'link_image',
-                'link_video'
-            ]));
-            if ($needAttachment && !isset($p['attachments'])) {
-                $p['attachments'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
-            }
-
             if ($p) {
+                $fields = [
+                    'owner_id' => $currentAd[AdsFeed::COL_POST_OWNER_ID],
+                    'post_id'  => $currentAd[AdsFeed::COL_POST_ID]
+                ];
+                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]) {
+                    $fields['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+                }
+                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE]) {
+                    $fields['link_title'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
+                }
+                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE]) {
+                    $fields['link_button'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+                }
+                if ($currentAd[AdsFeed::COL_POST_LINK_IMAGE]) {
+                    $fields['link_image'] = $currentAd[AdsFeed::COL_POST_LINK_IMAGE];
+                }
+                if ($currentAd[AdsFeed::COL_POST_TEXT]) {
+                    $fields['message'] = $currentAd[AdsFeed::COL_POST_TEXT];
+                }
+                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]) {
+                    $fields['attachments'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+                }
                 $commands[] = [
                     'type' => 'updatePost',
                     'adId' => $adId,
-                    'item' => array_replace([
-                        'owner_id' => $currentState[$adId][AdsFeed::COL_POST_OWNER_ID],
-                        'post_id'  => $currentState[$adId][AdsFeed::COL_POST_ID]
-                    ], $p),
+                    'item' => array_replace($fields, $p),
                 ];
             }
         }
@@ -455,7 +474,7 @@ class ApiClient
      */
     private function post(string $method, array $body = [], array $queryParams = [])
     {
-        $rsp = $this->http->post($method, ['form_params' => $body, 'query' => $this->addDefaultParams($queryParams)]);
+        $rsp = $this->api()->post($method, ['form_params' => $body, 'query' => $this->addDefaultParams($queryParams)]);
         $data = \json_decode($rsp->getBody()->getContents(), true);
 
         if (!is_array($data)) {
@@ -480,7 +499,7 @@ class ApiClient
 
     private function get(string $method, array $queryParams = [])
     {
-        $rsp = $this->http->get($method, ['query' => $this->addDefaultParams($queryParams)]);
+        $rsp = $this->api()->get($method, ['query' => $this->addDefaultParams($queryParams)]);
 
         $data = \json_decode($rsp->getBody()->getContents(), true);
 

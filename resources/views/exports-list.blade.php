@@ -17,7 +17,7 @@
             <tr>
                 <td>
                     <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
-                    @if(!in_array($export['status'], ['new', 'done']))
+                    @if(!in_array($export['status'], ['pending', 'done']))
                         <div class="my-2">
                             <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}"><button type="button" class="btn btn-outline-secondary btn-sm">повторить</button></a>
                         </div>
@@ -25,7 +25,7 @@
                 </td>
                 <td>{{ $export['created_at'] }}</td>
                 <td>{{ $export['updated_at'] }}</td>
-                <td class="text-center table-{{ ['done' => 'success', 'done_with_errors' => 'warning', 'failed' => 'danger', 'interrupted' => 'danger'][$export['status']] ?? 'info'}}">{{ $export['status'] }}</td>
+                <td class="text-center table-{{ ['done' => 'success', 'done_with_errors' => 'warning', 'failed' => 'danger', 'interrupted' => 'warning'][$export['status']] ?? 'info'}}">{{ $export['status'] }}</td>
             </tr>
             @endforeach
 

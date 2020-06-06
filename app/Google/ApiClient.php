@@ -58,7 +58,7 @@ class ApiClient
         $rows = $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
 
         foreach ($rows as $i => $operation) {
-            if ($operation['status'] == 'new') {
+            if ($operation['status'] == 'pending') {
                 return array_replace(['id' => $i + 2 /* start from 1 + headers row */], $operation);
             }
         }

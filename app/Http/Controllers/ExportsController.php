@@ -26,17 +26,17 @@ class ExportsController extends BaseController
             'spreadsheetId' => $request->input('spreadsheetId'),
             'created_at'    => $now,
             'updated_at'    => $now,
-            'status'        => 'new',
+            'status'        => 'pending',
         ];
         $google = new GoogleApiClient();
         $google->appendRow(getenv('OPERATIONS_SPREADSHEET_ID'), $operation);
 
-        return redirect()->action('ExportsController@started', ['spreadsheetId' => $operation['spreadsheetId']]);
+        return redirect()->action('ExportsController@started');
     }
 
-    public function started(Request $request)
+    public function started()
     {
-        return view('exports-started', ['spreadsheetId' => $request->input('spreadsheetId')]);
+        return view('exports-started');
     }
 
 }

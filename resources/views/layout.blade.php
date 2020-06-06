@@ -22,7 +22,7 @@
     <body>
         <div class="container-fluid h-100">
             <div class="row h-100">
-                <div class="col-2 navbar-dark bg-dark shadow-sm pt-4">
+                <div class="col-2 navbar-dark bg-dark shadow-sm pt-5">
                     <div class="mb-3">
                         <a href="/"
                            class="navbar-brand">
@@ -41,7 +41,7 @@
 
                         @if($vkAccount)
                             <li class="nav-item">
-                                <a href="/exports"
+                                <a href="/exports_confirm"
                                    class="nav-linksmall text-white mr-3">Запустить загрузку</a>
                             </li>
                             <li class="nav-item">
@@ -55,10 +55,10 @@
                         @endif
                     </ul>
                 </div>
-                <div class="col pt-4">
+                <div class="col pt-5">
                     @yield('content')
                 </div>
-                <div class="col-1 pt-4">
+                <div class="col-1 pt-5">
                 </div>
             </div>
         </div>

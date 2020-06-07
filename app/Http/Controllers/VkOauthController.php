@@ -38,7 +38,7 @@ class VkOauthController extends BaseController
         $rsp = $http->get('https://oauth.vk.com/access_token', ['query' => $query]);
 
         return view('vk-auth-result', [
-            'ok'         => $status = $rsp->getStatusCode() < 400,
+            'ok'         => $rsp->getStatusCode() < 400,
             'vkResponse' => $rsp->getBody()->getContents()
         ]);
     }

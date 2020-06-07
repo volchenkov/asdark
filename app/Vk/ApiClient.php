@@ -54,12 +54,9 @@ class ApiClient
 
     public static function instance()
     {
-        $creds = json_decode(file_get_contents(getenv('VK_CREDENTIALS_FILE')), true);
-        if (!$creds) {
-            throw new \RuntimeException('Invalid VK credentials');
-        }
+        $conn = \App\Connection::where('system', 'vk')->firstOrFail();
 
-        return new self($creds['account'], $creds['access_token']);
+        return new self($conn->data['account'], $conn->data['access_token']);
     }
 
     public function getClientId(): ?string

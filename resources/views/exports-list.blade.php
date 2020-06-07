@@ -24,10 +24,17 @@
                             </a>
                         </div>
                     @endif
+                    @if(in_array($export['status'], ['pending']))
+                        <div class="my-2">
+                            <a href="/exports_cancel?id={{ $export['id'] }}">
+                                <button type="button" class="btn btn-outline-secondary btn-sm">отменить</button>
+                            </a>
+                        </div>
+                    @endif
                 </td>
                 <td>{{ $export['created_at'] }}</td>
                 <td>{{ $export['updated_at'] }}</td>
-                <td class="text-center table-{{ ['done' => 'success', 'done_with_errors' => 'warning', 'failed' => 'danger', 'interrupted' => 'warning'][$export['status']] ?? 'info'}}">{{ $export['status'] }}</td>
+                <td class="text-center table-{{ ['pending' => 'info', 'processing' => 'info', 'done' => 'success', 'done_with_errors' => 'warning', 'failed' => 'danger', 'interrupted' => 'warning'][$export['status']] ?? 'default'}}">{{ $export['status'] }}</td>
             </tr>
             @endforeach
 

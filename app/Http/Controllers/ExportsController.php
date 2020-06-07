@@ -12,12 +12,21 @@ class ExportsController extends BaseController
 
     public function list()
     {
-        return view('exports-list', ['exports' => Export::all()]);
+        return view('exports-list', ['exports' => Export::all()->sortByDEsc('id')]);
     }
 
     public function confirm(Request $request)
     {
         return view('exports-confirm', ['spreadsheetId' => $request->input('sid')]);
+    }
+
+    public function cancel(Request $request)
+    {
+        $export = Export::find($request->input('id'));
+        $export->status = 'canceled';
+        $export->saveOrFail();
+
+        return redirect()->action('ExportsController@list');
     }
 
     public function start(Request $request)

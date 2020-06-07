@@ -157,9 +157,12 @@ class AdsFeed
 
     public static function dependsOn(string $entity, array $fields): bool
     {
-        $entityFields = array_filter(self::FIELDS, fn ($field)  => $field['entity'] === $entity);
+        return count(array_intersect($fields, array_keys(self::getEntityFields($entity)))) > 0;
+    }
 
-        return count(array_intersect($fields, array_keys($entityFields))) > 0;
+    public static function getEntityFields(string $entity): array
+    {
+        return array_filter(self::FIELDS, fn ($field) => $field['entity'] === $entity);
     }
 
 }

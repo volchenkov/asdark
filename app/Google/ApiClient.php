@@ -28,7 +28,7 @@ class ApiClient
 
         if ($grid) {
             $valueRange = new \Google_Service_Sheets_ValueRange();
-            $valueRange->setValues($grid);
+            $valueRange->setValues($this->replaceNullValues($grid));
             $valueRange->setRange('A1');
 
             $body = new \Google_Service_Sheets_BatchUpdateValuesRequest();
@@ -120,5 +120,16 @@ class ApiClient
         $client->setPrompt('select_account consent');
 
         return $client;
+    }
+
+    private function replaceNullValues(array $grid): array
+    {
+        foreach ($grid as $i => $row) {
+            foreach ($row as $j => $value) {
+                $grid[$i][$j] = is_null($value) ? '' : $value;
+            }
+        }
+
+        return $grid;
     }
 }

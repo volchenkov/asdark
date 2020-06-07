@@ -46,33 +46,40 @@ class AdsEditController extends BaseController
 
         return view('ads-edit-generation-form', [
             'clientId'  => $clientId,
-            'campaigns' => $campaigns,
-            'fields'    => array_filter(AdsFeed::FIELDS, fn($field) => $field['editable'])
+            'campaigns' => $campaigns
         ]);
     }
 
     public function generate(Request $request)
     {
         $campaignIds = $request->input('campaign_ids');
-        $adFields = $request->input('ad_fields');
         $clientId = $request->input('client_id');
+        $needPosts = filter_var($request->input('need_posts'), FILTER_VALIDATE_BOOLEAN);
 
         $vk = VkApiClient::instance();
         $vk->setClientId($clientId);
 
         $ads = $vk->getAds($campaignIds);
 
-        $defaultCols = [
+        $fields = [
             AdsFeed::COL_CAMPAIGN_ID,
             AdsFeed::COL_CAMPAIGN_NAME,
-            AdsFeed::COL_AD_ID,
-            AdsFeed::COL_AD_NAME,
+            AdsFeed::COL_AD_ID
         ];
         if ($clientId) {
-            array_unshift($defaultCols, AdsFeed::COL_CLIENT_ID);
+            array_unshift($fields, AdsFeed::COL_CLIENT_ID);
         }
 
-        $feed = $vk->getFeed(array_column($ads, 'id'), array_unique(array_merge($defaultCols, $adFields)));
+        $getPostFields = function($entity) {
+            return array_keys(array_filter(AdsFeed::getEntityFields($entity), fn($f) => $f['editable']));
+        };
+
+        $fields = array_merge($fields, $getPostFields('ad'));
+        if ($needPosts) {
+            $fields = array_merge($fields, $getPostFields('post'));
+        }
+
+        $feed = $vk->getFeed(array_column($ads, 'id'), $fields);
 
         usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 

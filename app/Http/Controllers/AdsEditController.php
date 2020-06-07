@@ -16,12 +16,12 @@ class AdsEditController extends BaseController
         $vk = new VkApiClient();
         try {
             $clients = $vk->getClients();
-        } catch (\RuntimeException $exception) {
+        } catch (\RuntimeException $e) {
             // для не агентского кабинета вернутся ошибка "account_id is invalid"
-            if (strpos($exception->getMessage(), "account_id is invalid")) {
+            if (strpos($e->getMessage(), "account_id is invalid")) {
                 $clients = null;
             } else {
-                throw $exception;
+                throw $e;
             }
         }
 

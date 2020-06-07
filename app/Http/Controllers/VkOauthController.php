@@ -52,8 +52,7 @@ class VkOauthController extends BaseController
 
     public function save(Request $request)
     {
-        $conn = Connection::where('system', 'vk')->firstOrCreate();
-        $conn->system = 'vk';
+        $conn = Connection::firstOrNew(['system' => 'vk']);
         $conn->data = [
             'access_token' => $request->input('access_token'),
             'expires_in'   => $request->input('expires_in'),

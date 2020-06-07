@@ -13,4 +13,6 @@ class Connection extends Model
 
     protected $table = 'connections';
 
+    protected $fillable = ['system'];
+
 }

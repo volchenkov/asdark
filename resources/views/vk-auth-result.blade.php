@@ -5,8 +5,9 @@
     <div class="col-md-12">
         @if ($ok)
             <form action="/vk_auth_save" method="POST">
+                @csrf
                 <input type="hidden" name="access_token" value="{{ $accessToken }}"/>
-                <input type="hidden" name="expires_in" value="{{ $accessIn }}"/>
+                <input type="hidden" name="expires_in" value="{{ $expiresIn }}"/>
                 <input type="hidden" name="vk_user_id" value="{{ $userId }}"/>
 
                 <div class="row">

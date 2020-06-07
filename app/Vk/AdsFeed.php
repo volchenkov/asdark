@@ -17,6 +17,7 @@ class AdsFeed
     const COL_AD_ID = 'ad_id';
     const COL_AD_NAME = 'ad_name';
     const COL_AD_TITLE = 'ad_title';
+    const COL_AD_DESCRIPTION = 'ad_description';
     const COL_AD_FORMAT = 'ad_format';
     const COL_AUTOBIDDING = 'ad_autobidding';
     const COL_GOAL_TYPE = 'goal_type';
@@ -64,6 +65,11 @@ class AdsFeed
             'entity'   => 'ad',
             'desc'     => 'Заголовок объявления'
         ],
+        self::COL_AD_DESCRIPTION                          => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Описание объявления'
+        ],
         self::COL_AD_LINK_URL                             => [
             'editable' => true,
             'entity'   => 'ad',
@@ -94,7 +100,7 @@ class AdsFeed
             'entity'   => 'post',
             'desc'     => 'Ссылка в посте'
         ],
-        self::COL_POST_ATTACHMENT_LINK_TITLE                => [
+        self::COL_POST_ATTACHMENT_LINK_TITLE              => [
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'Заголовок поста'
@@ -104,57 +110,57 @@ class AdsFeed
             'entity'   => 'post',
             'desc'     => 'Текст кнопки пост'
         ],
-        self::COL_AD_TARGETING_COUNTRY => [
+        self::COL_AD_TARGETING_COUNTRY                    => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'ID страны таргетинга'
         ],
-        self::COL_AD_TARGETING_CITIES => [
+        self::COL_AD_TARGETING_CITIES                     => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'ID городов таргетинга через запятую'
         ],
-        self::COL_AUTOBIDDING => [
+        self::COL_AUTOBIDDING                             => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Автоуправление ценой (1 - включено, 0 - выключено)'
         ],
-        self::COL_AD_FORMAT => [
+        self::COL_AD_FORMAT                               => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Формат объявления'
         ],
-        self::COL_GOAL_TYPE => [
+        self::COL_GOAL_TYPE                               => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Цель'
         ],
-        self::COL_COST_TYPE => [
+        self::COL_COST_TYPE                               => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Форма оплаты'
         ],
-        self::COL_AD_OCPM => [
+        self::COL_AD_OCPM                                 => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Оптимизированная цена за 1к показов, руб'
         ],
-        self::COL_AD_CATEGORY1 => [
+        self::COL_AD_CATEGORY1                            => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Категория объявления'
         ],
-        self::COL_AD_DAY_LIMIT => [
+        self::COL_AD_DAY_LIMIT                            => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Дней лимит трат на объявление, руб'
         ],
-        self::COL_POST_ATTACHMENT_LINK_VIDEO_ID => [
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_ID           => [
             'editable' => true,
             'entity'   => 'post',
             'desc'     => 'ID видео поста'
         ],
-        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID => [
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID     => [
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'ID владельца (группы) видео поста'

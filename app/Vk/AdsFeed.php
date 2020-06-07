@@ -107,7 +107,7 @@ class AdsFeed
             'desc'     => 'Ссылка в посте'
         ],
         self::COL_POST_ATTACHMENT_LINK_TITLE              => [
-            'editable' => false,
+            'editable' => true,
             'entity'   => 'post',
             'desc'     => 'Заголовок поста'
         ],

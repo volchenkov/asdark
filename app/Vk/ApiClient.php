@@ -91,13 +91,13 @@ class ApiClient
                 case AdsFeed::COL_AD_NAME:
                     return $ad['name'];
                 case AdsFeed::COL_AD_TITLE:
-                    return $ad['layout']['title'];
+                    return $ad['layout']['title'] ?? null;
                 case AdsFeed::COL_AD_LINK_URL:
-                    return $ad['layout']['link_url'];
+                    return $ad['layout']['link_url'] ?? null;
                 case AdsFeed::COL_AD_DESCRIPTION:
-                    return $ad['layout']['description'];
+                    return $ad['layout']['description'] ?? null;
                 case AdsFeed::COL_AD_LINK_TITLE:
-                    return $ad['layout']['link_title'];
+                    return $ad['layout']['link_title'] ?? null;
                 case AdsFeed::COL_CAMPAIGN_ID:
                     return $ad['campaign_id'];
                 case AdsFeed::COL_CAMPAIGN_NAME:
@@ -363,6 +363,9 @@ class ApiClient
             }
             if ($needUpdate(AdsFeed::COL_POST_LINK_IMAGE)) {
                 $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
+            }
+            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE)) {
+                $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
             }
             if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID)) {
                 $p['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";

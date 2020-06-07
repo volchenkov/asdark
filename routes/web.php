@@ -21,6 +21,7 @@ Route::middleware(['basicAuth'])->group(function () {
 
     Route::get('/vk_auth', 'VkOauthController@form');
     Route::get('/vk_auth_callback', 'VkOauthController@callback');
+    Route::post('/vk_auth_save', 'VkOauthController@save');
 
     Route::get('/exports_confirm', 'ExportsController@confirm');
     Route::post('/exports_start', 'ExportsController@start');

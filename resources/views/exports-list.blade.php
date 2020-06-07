@@ -16,10 +16,10 @@
             @foreach($exports as $export)
             <tr>
                 <td>
-                    <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
-                    @if(!in_array($export['status'], ['pending', 'done']))
+                    <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>
+                    @if(!in_array($export['status'], ['pending', 'done', 'processing']))
                         <div class="my-2">
-                            <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}">
+                            <a href="/exports_confirm?sid={{ $export['sid'] }}">
                                 <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
                             </a>
                         </div>

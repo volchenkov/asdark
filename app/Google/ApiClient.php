@@ -44,28 +44,6 @@ class ApiClient
         return $spreadsheet;
     }
 
-    public function appendRow($spreadsheetId, $row)
-    {
-        $body = new \Google_Service_Sheets_ValueRange();
-        $body->setValues([array_values($row)]);
-
-        $googleSheets = new \Google_Service_Sheets($this->getClient());
-        $googleSheets->spreadsheets_values->append($spreadsheetId, 'A1', $body, ['valueInputOption' => 'RAW']);
-    }
-
-    public function getPendingOperation(): ?array
-    {
-        $rows = $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
-
-        foreach ($rows as $i => $operation) {
-            if ($operation['status'] == 'pending') {
-                return array_replace(['id' => $i + 2 /* start from 1 + headers row */], $operation);
-            }
-        }
-
-        return null;
-    }
-
     public function getCells(string $spreadsheetId, string $range): array
     {
         $googleSheets = new \Google_Service_Sheets($this->getClient());
@@ -80,18 +58,6 @@ class ApiClient
         }
 
         return $rows;
-    }
-
-    public function getOperations(): array
-    {
-        return $this->getCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'Sheet1');
-    }
-
-    public function updateOperationStatus(int $operationId, string $status, ?string $cause = null)
-    {
-        $this->writeCells(getenv('OPERATIONS_SPREADSHEET_ID'), 'C'.$operationId, [
-            [(new \DateTime())->format('Y-m-d H:i:s'), $status, (string) $cause]
-        ]);
     }
 
     public function writeCells(string $spreadsheetId, string $range, array $data)

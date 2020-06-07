@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Export;
 use App\Google\ApiClient as GoogleApiClient;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -11,7 +12,7 @@ class ExportsController extends BaseController
 
     public function list()
     {
-        return view('exports-list', ['exports' => array_reverse((new GoogleApiClient())->getOperations())]);
+        return view('exports-list', ['exports' => Export::all()]);
     }
 
     public function confirm(Request $request)
@@ -21,15 +22,11 @@ class ExportsController extends BaseController
 
     public function start(Request $request)
     {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $operation = [
-            'spreadsheetId' => $request->input('spreadsheetId'),
-            'created_at'    => $now,
-            'updated_at'    => $now,
-            'status'        => 'pending',
-        ];
-        $google = new GoogleApiClient();
-        $google->appendRow(getenv('OPERATIONS_SPREADSHEET_ID'), $operation);
+        $export = new Export();
+        $export->sid = $request->input('spreadsheetId');
+        $export->status = 'pending';
+
+        $export->saveOrFail();
 
         return redirect()->action('ExportsController@started');
     }

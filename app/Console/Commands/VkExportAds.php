@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Export;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
@@ -46,36 +47,37 @@ class VkExportAds extends Command
         $this->vk = VkApiClient::instance();
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
     public function handle()
     {
-        $operation = $this->google->getPendingOperation();
-        if (!$operation) {
+        $export = Export::where('status', 'pending')->first();
+        if (!$export) {
             $this->line('Nothing to do');
             return;
         }
+
         try {
-            $this->google->updateOperationStatus($operation['id'], 'processing');
-            $status = $this->exportAds($operation);
-            $this->google->updateOperationStatus($operation['id'], self::STATUS_TEXT[$status]);
+            $export->status = 'processing';
+            $export->save();
+            $result = $this->exportAds($export->sid);
+            $status = self::STATUS_TEXT[$result];
+            $failure = null;
         } catch (\Throwable $e) {
             error_log('Failed export ads: ' . $e->getMessage());
-            $this->google->updateOperationStatus($operation['id'], 'failed', $e->getMessage());
+            $status = 'failed';
+            $failure = $e->getMessage();
+        } finally {
+            $export->status = $status;
+            $export->failure = $failure;
+            $export->finish_time = new \DateTime('now');
+
+            $export->save();
         }
 
         return;
     }
 
-    private function exportAds(array $operation): int
+    private function exportAds($spreadsheetId): int
     {
-        $spreadsheetId = $operation['spreadsheetId'] ?? null;
-        if (!$spreadsheetId) {
-            throw new \RuntimeException('Spreadsheet ID is undefined');
-        }
         $remoteFeed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
 
         if (count($remoteFeed) == 0) {

@@ -29,6 +29,7 @@ Route::middleware(['basicAuth'])->group(function () {
 
 
     Route::get('/ads_edit_form', 'AdsEditController@form');
+    Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');
     Route::get('/ads_edit_generate', 'AdsEditController@generate');
 });
 

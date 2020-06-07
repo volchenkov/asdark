@@ -8,8 +8,15 @@
     </div>
 </div>
 <form action="/ads_edit_generate">
+    @if ($clientId)
+        <input type="hidden" name="client_id" value="{{ $clientId }}"/>
+    @endif
+
     <div class="row">
         <div class="col-md-8 form-group">
+            @if (!$campaigns)
+                <p><strong>Не найдено ни одной кампании клиента.</strong></p>
+            @else
             <label for="campaign_ids">Кампании</label>
             <select name="campaign_ids[]"
                     id="campaign_ids"
@@ -21,6 +28,7 @@
                     <option value="{{ $campaign['id'] }}"> {{ $campaign['name'] }}</option>
                 @endforeach
             </select>
+            @endif
         </div>
     </div>
     <div class="row">

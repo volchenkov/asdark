@@ -11,14 +11,43 @@ use Illuminate\Http\Request;
 class AdsEditController extends BaseController
 {
 
-    public function form()
+    public function chooseClient(Request $request)
     {
-        $campaigns = VkApiClient::instance()->getCampaigns();
+        $vk = VkApiClient::instance();
+        try {
+            $clients = $vk->getClients();
+        } catch (\RuntimeException $exception) {
+            // для не агентского кабинета вернутся ошибка "account_id is invalid"
+            if (strpos($exception->getMessage(), "account_id is invalid")) {
+                $clients = null;
+            } else {
+                throw $exception;
+            }
+        }
+
+        if ($clients) {
+            usort($clients, fn ($a, $b) => strcmp($a["name"], $b["name"]));
+            return view('ads-edit-choose-client', ['clients' => $clients]);
+        } else {
+            return redirect()->action('AdsEditController@form');
+        }
+
+    }
+
+    public function form(Request $request)
+    {
+        $clientId = $request->input('client_id');
+        $vk = VkApiClient::instance();
+        $campaigns = $vk
+            ->setClientId($clientId)
+            ->getCampaigns();
+
         usort($campaigns, fn ($a, $b) => strcmp($a["name"], $b["name"]));
 
         return view('ads-edit-generation-form', [
-            'campaigns'      => $campaigns,
-            'fields'         => array_filter(AdsFeed::FIELDS, fn($field) => $field['editable'])
+            'clientId'  => $clientId,
+            'campaigns' => $campaigns,
+            'fields'    => array_filter(AdsFeed::FIELDS, fn($field) => $field['editable'])
         ]);
     }
 
@@ -26,8 +55,10 @@ class AdsEditController extends BaseController
     {
         $campaignIds = $request->input('campaign_ids');
         $adFields = $request->input('ad_fields');
+        $clientId = $request->input('client_id');
 
         $vk = VkApiClient::instance();
+        $vk->setClientId($clientId);
 
         $ads = $vk->getAds($campaignIds);
 
@@ -37,6 +68,10 @@ class AdsEditController extends BaseController
             AdsFeed::COL_AD_ID,
             AdsFeed::COL_AD_NAME,
         ];
+        if ($clientId) {
+            array_unshift($defaultCols, AdsFeed::COL_CLIENT_ID);
+        }
+
         $feed = $vk->getFeed(array_column($ads, 'id'), array_unique(array_merge($defaultCols, $adFields)));
 
         usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);

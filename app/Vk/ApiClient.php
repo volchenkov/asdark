@@ -29,13 +29,12 @@ class ApiClient
 
     private string $account;
     private string $accessToken;
-    private ?string $clientId;
+    public ?string $clientId = null;
 
-    private function __construct(string $account, string $accessToken, ?string $clientId = null)
+    private function __construct(string $account, string $accessToken)
     {
         $this->account = $account;
         $this->accessToken = $accessToken;
-        $this->clientId = $clientId;
     }
 
     private function api(): Client
@@ -46,6 +45,13 @@ class ApiClient
         ]);
     }
 
+    public function setClientId(?int $clientId): self
+    {
+        $this->clientId = $clientId;
+
+        return $this;
+    }
+
     public static function instance()
     {
         $creds = json_decode(file_get_contents(getenv('VK_CREDENTIALS_FILE')), true);
@@ -53,7 +59,7 @@ class ApiClient
             throw new \RuntimeException('Invalid VK credentials');
         }
 
-        return new self($creds['account'], $creds['access_token'], $creds['client_id']);
+        return new self($creds['account'], $creds['access_token']);
     }
 
     public function getClientId(): ?string
@@ -92,6 +98,11 @@ class ApiClient
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }
 
+    public function getClients():array
+    {
+        return $this->get('ads.getClients');
+    }
+
     public function getFeed(array $adIds, array $fields): array
     {
         $getFieldValue = function (array $ad, string $field) {
@@ -124,6 +135,8 @@ class ApiClient
                     return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
                     return $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
+                case AdsFeed::COL_CLIENT_ID:
+                    return $this->clientId;
                 default:
                     return null;
             }

@@ -49,7 +49,7 @@
                                    class="nav-linksmall text-white mr-3">Загрузки</a>
                             </li>
                             <li class="nav-item">
-                                <a href="/ads_edit_form"
+                                <a href="/ads_edit_choose_client"
                                    class="nav-linksmall text-white mr-3">Редактирование объявлений</a>
                             </li>
                         @endif

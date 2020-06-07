@@ -13,7 +13,7 @@ class AdsEditController extends BaseController
 
     public function chooseClient(Request $request)
     {
-        $vk = VkApiClient::instance();
+        $vk = new VkApiClient();
         try {
             $clients = $vk->getClients();
         } catch (\RuntimeException $exception) {
@@ -37,7 +37,7 @@ class AdsEditController extends BaseController
     public function form(Request $request)
     {
         $clientId = $request->input('client_id');
-        $vk = VkApiClient::instance();
+        $vk = new VkApiClient();
         $campaigns = $vk
             ->setClientId($clientId)
             ->getCampaigns();
@@ -56,7 +56,7 @@ class AdsEditController extends BaseController
         $clientId = $request->input('client_id');
         $needPosts = filter_var($request->input('need_posts'), FILTER_VALIDATE_BOOLEAN);
 
-        $vk = VkApiClient::instance();
+        $vk = new VkApiClient();
         $vk->setClientId($clientId);
 
         $ads = $vk->getAds($campaignIds);

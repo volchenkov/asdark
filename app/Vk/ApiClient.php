@@ -2,6 +2,7 @@
 
 namespace App\Vk;
 
+use App\Connection;
 use \GuzzleHttp\Client;
 
 /**
@@ -27,15 +28,8 @@ class ApiClient
 
     const VERSION = '5.103';
 
-    private string $account;
-    private string $accessToken;
     private ?string $clientId = null;
-
-    private function __construct(string $account, string $accessToken)
-    {
-        $this->account = $account;
-        $this->accessToken = $accessToken;
-    }
+    private Connection $connection;
 
     private function api(): Client
     {
@@ -52,21 +46,9 @@ class ApiClient
         return $this;
     }
 
-    public static function instance()
-    {
-        $conn = \App\Connection::where('system', 'vk')->firstOrFail();
-
-        return new self($conn->data['account'], $conn->data['access_token']);
-    }
-
     public function getClientId(): ?string
     {
         return $this->clientId;
-    }
-
-    public function getAccount(): ?string
-    {
-        return $this->account;
     }
 
     public function getCampaigns()
@@ -306,7 +288,7 @@ class ApiClient
     {
         $forType = fn ($type) => fn ($command) => $command['type'] == $type;
 
-        $code = "var a = '{$this->account}';\n";
+        $code = "var a = '{$this->getConnection()->data['account']}';\n";
         $code .= "var result = {'ads': [], 'posts': []};\n";
 
         $adsUpdates = array_filter($commands, $forType('updateAd'));
@@ -464,17 +446,25 @@ class ApiClient
     private function addDefaultParams(array $params): array
     {
         $defaults = [
-            'access_token' => $this->accessToken,
+            'access_token' => $this->getConnection()->data['access_token'],
             'v'            => self::VERSION,
+            'account_id'   => $this->getConnection()->data['account']
         ];
-        if ($this->account) {
-            $defaults['account_id'] = $this->account;
-        }
+
         if ($this->clientId) {
             $defaults['client_id'] = $this->clientId;
         }
 
         return array_replace($defaults, $params);
+    }
+
+    private function getConnection():Connection
+    {
+        if (!isset($this->connection)) {
+            $this->connection = Connection::where('system', 'vk')->firstOrFail();
+        }
+
+        return $this->connection;
     }
 
 }

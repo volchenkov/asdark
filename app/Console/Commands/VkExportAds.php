@@ -44,7 +44,7 @@ class VkExportAds extends Command
     {
         parent::__construct();
         $this->google = new GoogleApiClient();
-        $this->vk = VkApiClient::instance();
+        $this->vk = new VkApiClient();
     }
 
     public function handle()

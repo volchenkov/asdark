@@ -35,11 +35,6 @@
                             <a href="/vk_auth"
                                class="nav-linksmall text-white mr-3">Подключить ВК</a>
                         </li>
-                        @if($vkAccount)
-                            <span class="text-muted">подключен <span title="Аккаунт">{{ $vkAccount }}</span> {{ $vkClientId ? "( клиент".$vkClientId.")" : '' }}</span>
-                        @endif
-
-                        @if($vkAccount)
                             <li class="nav-item">
                                 <a href="/exports_confirm"
                                    class="nav-linksmall text-white mr-3">Запустить загрузку</a>
@@ -52,8 +47,7 @@
                                 <a href="/ads_edit_choose_client"
                                    class="nav-linksmall text-white mr-3">Редактирование объявлений</a>
                             </li>
-                        @endif
-                    </ul>
+                        </ul>
                 </div>
                 <div class="col pt-5">
                     @yield('content')

@@ -25,10 +25,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $vk = ApiClient::instance();
-        View::composer('layout', function ($view) {
-            $view->with('vkAccount', ApiClient::instance()->getAccount());
-            $view->with('vkClientId', ApiClient::instance()->getClientId());
-        });
+        // nothing here yet
     }
 }

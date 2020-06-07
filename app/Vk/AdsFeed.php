@@ -18,6 +18,7 @@ class AdsFeed
     const COL_AD_NAME = 'ad_name';
     const COL_AD_TITLE = 'ad_title';
     const COL_AD_DESCRIPTION = 'ad_description';
+    const COL_AD_LINK_TITLE = 'ad_link_title';
     const COL_AD_FORMAT = 'ad_format';
     const COL_AUTOBIDDING = 'ad_autobidding';
     const COL_GOAL_TYPE = 'goal_type';
@@ -69,6 +70,11 @@ class AdsFeed
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Описание объявления'
+        ],
+        self::COL_AD_LINK_TITLE                          => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Заголовок ссылки (рядом с кнопкой) объявления'
         ],
         self::COL_AD_LINK_URL                             => [
             'editable' => true,

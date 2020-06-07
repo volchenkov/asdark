@@ -96,6 +96,8 @@ class ApiClient
                     return $ad['layout']['link_url'];
                 case AdsFeed::COL_AD_DESCRIPTION:
                     return $ad['layout']['description'];
+                case AdsFeed::COL_AD_LINK_TITLE:
+                    return $ad['layout']['link_title'];
                 case AdsFeed::COL_CAMPAIGN_ID:
                     return $ad['campaign_id'];
                 case AdsFeed::COL_CAMPAIGN_NAME:
@@ -335,6 +337,9 @@ class ApiClient
             }
             if ($needUpdate(AdsFeed::COL_AD_DESCRIPTION)) {
                 $u['description'] = $ad[AdsFeed::COL_AD_DESCRIPTION];
+            }
+            if ($needUpdate(AdsFeed::COL_AD_LINK_TITLE)) {
+                $u['link_title'] = $ad[AdsFeed::COL_AD_LINK_TITLE];
             }
             if ($u) {
                 $commands[] = [

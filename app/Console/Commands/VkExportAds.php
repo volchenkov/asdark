@@ -7,28 +7,6 @@ use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
 use \App\Google\ApiClient as GoogleApiClient;
 
-/**
- * Expected feed fields:
- *
- * ad_format,
- * campaign_id,
- * ad_name,
- * ad_autobidding,
- * goal_type,
- * cost_type,
- * day_limit
- * ocpm,
- * cpm,
- * cpc,
- * category1_id,
- * targeting_cities,
- * targeting_country,
- * post_link_button,
- * post_link_image,
- * post_message,
- * post_attachments,
- * post_owner_id
- */
 class VkExportAds extends Command
 {
     /**
@@ -108,6 +86,9 @@ class VkExportAds extends Command
         $headers = array_keys($remoteFeed[0]);
         if (!in_array(AdsFeed::COL_AD_ID, $headers)) {
             throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
+        }
+        if (in_array(AdsFeed::COL_CLIENT_ID, $headers)) {
+            $this->vk->setClientId($remoteFeed[0][AdsFeed::COL_CLIENT_ID]);
         }
 
         $adkCols = [

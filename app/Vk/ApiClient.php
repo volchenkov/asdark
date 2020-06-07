@@ -29,7 +29,7 @@ class ApiClient
 
     private string $account;
     private string $accessToken;
-    public ?string $clientId = null;
+    private ?string $clientId = null;
 
     private function __construct(string $account, string $accessToken)
     {

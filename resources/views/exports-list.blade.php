@@ -16,13 +16,18 @@
             @foreach($exports as $export)
             <tr>
                 <td>
-                    <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
-                    @if(!in_array($export['status'], ['pending', 'done']))
-                        <div class="my-2">
-                            <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}">
-                                <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
-                            </a>
-                        </div>
+                    <div>
+                        <a href="https://docs.google.com/spreadsheets/d/{{ $export['spreadsheetId'] }}" target="_blank">{{ $export['spreadsheetId'] }}</a>
+                    </div>
+                    @if(!in_array($export['status'], ['pending', 'processing', 'done']))
+                        <a href="/exports_confirm?sid={{ $export['spreadsheetId'] }}" class="mr-3 my-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
+                        </a>
+                    @endif
+                    @if(!in_array($export['status'], ['pending']))
+                        <a href="/exports_logs?sid={{ $export['spreadsheetId'] }}" target="_blank" class="mr-1 my-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm">логи</button>
+                        </a>
                     @endif
                 </td>
                 <td>{{ $export['created_at'] }}</td>

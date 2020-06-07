@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
 use \App\Google\ApiClient as GoogleApiClient;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Expected feed fields:
@@ -77,12 +79,16 @@ class VkExportAds extends Command
     {
         $operation = $this->google->getPendingOperation();
         if (!$operation) {
-            $this->line('Nothing to do');
+            $this->line('No pending operations');
             return;
         }
         try {
             $this->google->updateOperationStatus($operation['id'], 'processing');
-            $status = $this->exportAds($operation);
+            $spreadsheetId = $operation['spreadsheetId'] ?? null;
+            if (!$spreadsheetId) {
+                throw new \RuntimeException('Spreadsheet ID is undefined');
+            }
+            $status = $this->exportAds($spreadsheetId);
             $this->google->updateOperationStatus($operation['id'], self::STATUS_TEXT[$status]);
         } catch (\Throwable $e) {
             error_log('Failed export ads: ' . $e->getMessage());
@@ -92,16 +98,16 @@ class VkExportAds extends Command
         return;
     }
 
-    private function exportAds(array $operation): int
+    private function exportAds($spreadsheetId): int
     {
-        $spreadsheetId = $operation['spreadsheetId'] ?? null;
-        if (!$spreadsheetId) {
-            throw new \RuntimeException('Spreadsheet ID is undefined');
-        }
+        $log = new Logger('export');
+        $log->pushHandler(new StreamHandler(storage_path("logs/sheet-{$spreadsheetId}.log")));
+        $log->info('Загрузка началась');
+
         $remoteFeed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
 
         if (count($remoteFeed) == 0) {
-            $this->line('Empty feed');
+            $log->info('Файл загрузки пуст');
             return VkApiClient::UPDATE_STATUS_DONE;
         }
 
@@ -127,10 +133,11 @@ class VkExportAds extends Command
 
         $incompleteAds = array_filter($feed, fn ($i) => $i[AdsFeed::COL_ADK_STATUS] !== 'done');
         if (count($incompleteAds) === 0) {
-            $this->line('No incompleted ads');
+            $log->info('Нет объявлений для обновления');
             return VkApiClient::UPDATE_STATUS_DONE;
         }
-        list($status, $updatedFeed) = $this->vk->updateAds($incompleteAds);
+
+        list($status, $updatedFeed) = $this->vk->updateAds($incompleteAds, $log);
 
         $feed = array_values(array_replace($feed, $updatedFeed));
 

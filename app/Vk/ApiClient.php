@@ -105,7 +105,7 @@ class ApiClient
                 case AdsFeed::COL_POST_TEXT:
                     return $ad['post']['text'] ?? null;
                 case AdsFeed::COL_POST_LINK_IMAGE:
-                    return $ad['post']['attachments'][0]['link']['photo']['sizes'][0]['url'] ?? null;
+                    return $this->getBiggestPic($ad['post']['attachments'][0]['link']['photo']['sizes'] ?? null);
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_URL:
                     return $ad['post']['attachments'][0]['link']['url'] ?? null;
                 case AdsFeed::COL_POST_ID:
@@ -487,4 +487,13 @@ class ApiClient
         return $this->connection;
     }
 
+    private function getBiggestPic($sizes): ?string
+    {
+        if (!is_array($sizes) || !$sizes) {
+            return null;
+        }
+        usort($sizes, fn($a, $b) => $b['width'] <=> $a['width']);
+
+        return $sizes[0]['url'] ?? null;
+    }
 }

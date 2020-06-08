@@ -27,6 +27,7 @@ Route::middleware(['basicAuth'])->group(function () {
     Route::post('/exports_start', 'ExportsController@start');
     Route::get('/exports_started', 'ExportsController@started');
     Route::get('/exports_cancel', 'ExportsController@cancel');
+    Route::get('/exports_logs', 'ExportsController@logs');
     Route::get('/exports', 'ExportsController@list');
 
 

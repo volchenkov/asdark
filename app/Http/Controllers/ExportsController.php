@@ -20,6 +20,14 @@ class ExportsController extends BaseController
         return view('exports-confirm', ['spreadsheetId' => $request->input('sid')]);
     }
 
+    public function logs(Request $request)
+    {
+        $log = storage_path("logs/sheet-{$request->input('sid')}.log");
+        $formatted = str_replace(['[]', "\n"], ['', '<br/>'], file_get_contents($log));
+
+        return response($formatted, 200, ['Refresh' => '2']);
+    }
+
     public function cancel(Request $request)
     {
         $export = Export::find($request->input('id'));

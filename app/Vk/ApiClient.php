@@ -4,6 +4,7 @@ namespace App\Vk;
 
 use App\Connection;
 use \GuzzleHttp\Client;
+use Monolog\Logger;
 
 /**
  *
@@ -188,13 +189,7 @@ class ApiClient
         return $rows;
     }
 
-    /**
-     * @param array $feed indexed by ad id
-     * @param int $adsPerExecution
-     * @return array[]
-     * @throws \Exception
-     */
-    public function updateAds(array $feed, int $adsPerExecution = 5): array
+    public function updateAds(array $feed, Logger $logger, int $adsPerExecution = 5): array
     {
         $adIds = array_keys($feed);
         $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
@@ -202,6 +197,7 @@ class ApiClient
         $fails = 0;
         $remaining = count($feed);
         foreach (array_chunk($feed, $adsPerExecution, true) as $chunk) {
+            $logger->info(sprintf('Обновляются %s объявлений(-я), id: %s', count($chunk), implode(', ', array_keys($chunk))));
             try {
                 $commands = $this->getUpdateCommands($chunk, $currentState);
                 if ($commands) {
@@ -258,6 +254,7 @@ class ApiClient
                     }
                 }
             } catch (CaptchaException $e) {
+                $logger->warning('Обновление прервано, для продолжения нужна капча.');
                 foreach ($chunk as $adId => $_) {
                     $feed[$adId] = array_replace($feed[$adId], [
                         AdsFeed::COL_ADK_STATUS       => 'failed',
@@ -269,25 +266,28 @@ class ApiClient
                     return [self::UPDATE_STATUS_PARTIAL_INTERRUPTED, $feed];
                 }
             } catch (\Exception $e) {
+                $logger->warning("При обновлении возникла проблема {$e->getMessage()}");
                 foreach ($chunk as $adId => $_) {
                     $fails++;
                     $feed[$adId] = array_replace($feed[$adId], [
                         AdsFeed::COL_ADK_STATUS       => 'failed',
-                        AdsFeed::COL_ADK_ERR          => "Не удалось обновить обновление: {$e->getMessage()}",
+                        AdsFeed::COL_ADK_ERR          => "Не удалось обновить объявление: {$e->getMessage()}",
                         AdsFeed::COL_ADK_CAPTCHA      => '',
                         AdsFeed::COL_ADK_CAPTCHA_CODE => ''
                     ]);
                 }
             }
 
-            // anti captcha
             $remaining -= count($chunk);
             if ($remaining) {
-                $sleep = random_int(120, 130);
-                echo "sleep now {$sleep}\n";
+                $sleep = random_int(60, 80);
+                $logger->info("Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
                 sleep($sleep);
             }
         }
+
+        $logger->info('Загрузка окончена, см. таблицу загрузки с результатами обработки объявлений.');
+
 
         return [$fails ? self::UPDATE_STATUS_PARTIAL_FAILURE : self::UPDATE_STATUS_DONE, $feed];
     }

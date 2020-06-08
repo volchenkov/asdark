@@ -7,6 +7,8 @@ use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
 use \App\Google\ApiClient as GoogleApiClient;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 class VkExportAds extends Command
 {
@@ -78,10 +80,14 @@ class VkExportAds extends Command
 
     private function exportAds($spreadsheetId): int
     {
+        $log = new Logger('export');
+        $log->pushHandler(new StreamHandler(storage_path("logs/sheet-{$spreadsheetId}.log")));
+        $log->info('Загрузка началась');
+
         $remoteFeed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
 
         if (count($remoteFeed) == 0) {
-            $this->line('Empty feed');
+            $log->info('Файл загрузки пуст');
             return VkApiClient::UPDATE_STATUS_DONE;
         }
 
@@ -110,10 +116,10 @@ class VkExportAds extends Command
 
         $incompleteAds = array_filter($feed, fn ($i) => $i[AdsFeed::COL_ADK_STATUS] !== 'done');
         if (count($incompleteAds) === 0) {
-            $this->line('No incompleted ads');
+            $log->info('Нет объявлений для обновления');
             return VkApiClient::UPDATE_STATUS_DONE;
         }
-        list($status, $updatedFeed) = $this->vk->updateAds($incompleteAds);
+        list($status, $updatedFeed) = $this->vk->updateAds($incompleteAds, $log);
 
         $feed = array_values(array_replace($feed, $updatedFeed));
 

@@ -16,20 +16,23 @@
             @foreach($exports as $export)
             <tr>
                 <td>
-                    <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>
+                    <div>
+                        <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>
+                    </div>
                     @if(!in_array($export['status'], ['pending', 'done', 'processing']))
-                        <div class="my-2">
-                            <a href="/exports_confirm?sid={{ $export['sid'] }}">
-                                <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
-                            </a>
-                        </div>
+                        <a href="/exports_confirm?sid={{ $export['sid'] }}" class="mr-1 my-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm">повторить</button>
+                        </a>
                     @endif
                     @if(in_array($export['status'], ['pending']))
-                        <div class="my-2">
-                            <a href="/exports_cancel?id={{ $export['id'] }}">
-                                <button type="button" class="btn btn-outline-secondary btn-sm">отменить</button>
-                            </a>
-                        </div>
+                        <a href="/exports_cancel?id={{ $export['id'] }}" class="mr-1 my-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm">отменить</button>
+                        </a>
+                    @endif
+                    @if(!in_array($export['status'], ['pending']))
+                        <a href="/exports_logs?sid={{ $export['sid'] }}" target="_blank" class="mr-1 my-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm">логи</button>
+                        </a>
                     @endif
                 </td>
                 <td>{{ $export['created_at'] }}</td>

@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Vk\ApiClient;
+use App\Connection;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 
@@ -25,6 +25,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // nothing here yet
+        View::share('vkConnection', Connection::where('system', 'vk')->first());
     }
 }

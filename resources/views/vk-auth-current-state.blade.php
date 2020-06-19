@@ -5,7 +5,7 @@
         <div class="col-md-6 form-group">
             @if ($connection)
                 @if (isset($connection->data['account_id']))
-                    <p>ВК подключен</p>
+                    <div class="alert alert-success">ВК подключен</div>
                     <p>Выбран {{$connection->data['account_name']}} #{{$connection->data['account_id']}}</p>
                     <p class="small text-muted">Обновлено {{ $connection->updated_at }}</p>
                 @else

@@ -67,13 +67,17 @@ class VkOauthController extends BaseController
             return view('vk-auth-token-failed', ['message' => $e->getMessage()]);
         }
 
-        return view('vk-auth-choose-account', ['accounts' => $accounts]);
+        $activeAccounts = array_filter($accounts, fn($a) => $a['account_status'] == 1);
+
+        return view('vk-auth-choose-account', ['accounts' => array_values($activeAccounts)]);
     }
 
     public function save(Request $request)
     {
         $accounts = json_decode($request->input('accounts', '[]'), true);
-        $account = array_filter($accounts, fn($a) => $a['account_id'] == $request->input('account_id'))[0];
+        $accounts = array_combine(array_column($accounts, 'account_id'), $accounts);
+
+        $account = $accounts[$request->input('account_id')] ?? [];
 
         $conn = Connection::where('system', 'vk')->firstOrFail();
         $conn->data = array_replace($conn->data, $account);

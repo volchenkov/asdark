@@ -32,8 +32,8 @@
 
                     <ul class="nav flex-column flex-nowrap overflow-hidden">
                         <li class="nav-item">
-                            <a href="/vk_auth"
-                               class="nav-linksmall text-white mr-3">Подключить ВК</a>
+                            <a href="/vk_auth_current_state"
+                               class="nav-linksmall text-white mr-3">Подключение ВК</a>
                         </li>
                             <li class="nav-item">
                                 <a href="/exports_confirm"

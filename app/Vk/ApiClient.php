@@ -57,6 +57,11 @@ class ApiClient
         return $this->get('ads.getCampaigns');
     }
 
+    public function getAccounts(): array
+    {
+        return $this->get('ads.getAccounts');
+    }
+
     public function getAds(array $campaignIds)
     {
         return $this->get('ads.getAds', ['campaign_ids' => json_encode($campaignIds)]);
@@ -296,7 +301,7 @@ class ApiClient
     {
         $forType = fn ($type) => fn ($command) => $command['type'] == $type;
 
-        $code = "var a = '{$this->getConnection()->data['account']}';\n";
+        $code = "var a = '{$this->getConnection()->data['account_id']}';\n";
         $code .= "var result = {'ads': [], 'posts': []};\n";
 
         $adsUpdates = array_filter($commands, $forType('updateAd'));
@@ -465,11 +470,15 @@ class ApiClient
 
     private function addDefaultParams(array $params): array
     {
+        $conn =  $this->getConnection();
         $defaults = [
-            'access_token' => $this->getConnection()->data['access_token'],
-            'v'            => self::VERSION,
-            'account_id'   => $this->getConnection()->data['account']
+            'access_token' => $conn->data['access_token'],
+            'v'            => self::VERSION
         ];
+
+        if (isset($conn->data['account_id'])) {
+            $defaults['account_id'] = $conn->data['account_id'];
+        }
 
         if ($this->clientId) {
             $defaults['client_id'] = $this->clientId;
@@ -478,7 +487,7 @@ class ApiClient
         return array_replace($defaults, $params);
     }
 
-    private function getConnection():Connection
+    private function getConnection(): Connection
     {
         if (!isset($this->connection)) {
             $this->connection = Connection::where('system', 'vk')->firstOrFail();

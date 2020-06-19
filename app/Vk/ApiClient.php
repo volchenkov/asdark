@@ -83,8 +83,12 @@ class ApiClient
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }
 
-    public function getClients():array
+    public function getClients(): ?array
     {
+        if ($this->getConnection()->data['account_type'] !== "agency") {
+            return null;
+        }
+
         return $this->get('ads.getClients');
     }
 

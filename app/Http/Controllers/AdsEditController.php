@@ -14,24 +14,14 @@ class AdsEditController extends BaseController
     public function chooseClient(Request $request)
     {
         $vk = new VkApiClient();
-        try {
-            $clients = $vk->getClients();
-        } catch (\RuntimeException $e) {
-            // для не агентского кабинета вернутся ошибка "account_id is invalid"
-            if (strpos($e->getMessage(), "account_id is invalid")) {
-                $clients = null;
-            } else {
-                throw $e;
-            }
-        }
+        $clients = $vk->getClients();
 
-        if ($clients) {
+        if (is_array($clients)) {
             usort($clients, fn ($a, $b) => strcmp($a["name"], $b["name"]));
             return view('ads-edit-choose-client', ['clients' => $clients]);
         } else {
             return redirect()->action('AdsEditController@form');
         }
-
     }
 
     public function form(Request $request)

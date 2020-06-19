@@ -7,12 +7,12 @@
                 @if (isset($connection->data['account_id']))
                     <p>ВК подключен</p>
                     <p>Выбран {{$connection->data['account_name']}} #{{$connection->data['account_id']}}</p>
+                    <p class="small text-muted">Обновлено {{ $connection->updated_at }}</p>
                 @else
                     <div class="alert alert-warning">
-                        <p>При подключении ВК аккаунт не был выбран. Требуется повторить авторизацию.</p>
+                        При подключении ВК аккаунт не был выбран. Требуется повторить авторизацию.
                     </div>
                 @endif
-                <p class="small text-muted">Обновлено {{ $connection->updated_at }}</p>
             @else
                 <p>ВК пока не подключен</p>
             @endif

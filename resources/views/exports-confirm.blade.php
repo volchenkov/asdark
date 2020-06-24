@@ -8,6 +8,7 @@
 </div>
 <form action="/exports_start" method="POST">
     @csrf
+    <input type="hidden" name="spreadsheetId" value="{{ $spreadsheetId }}">
     <div class="row">
         <div class="col-12 form-group">
             <a href="https://docs.google.com/spreadsheets/d/{{$spreadsheetId}}" target="_blank">https://docs.google.com/spreadsheets/d/{{$spreadsheetId}}</a>

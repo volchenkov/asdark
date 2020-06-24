@@ -198,107 +198,58 @@ class ApiClient
         return $rows;
     }
 
-    public function updateAds(array $feed, Logger $logger, int $adsPerExecution = 5): array
+    /**
+     * @param array $feed
+     * @param $currentState
+     * @return array
+     * @throws CaptchaException
+     */
+    public function updateAds(array $feed, $currentState): array
     {
+        $commands = $this->getUpdateCommands($feed, $currentState);
+
         $adIds = array_keys($feed);
-        $currentState = $this->getFeed($adIds, array_keys(AdsFeed::FIELDS));
+        $errors = array_fill_keys($adIds, null);
+        if (!$commands) {
+            return $errors;
+        }
+        $params = ['code' => $this->formatCode($commands)];
 
-        $fails = 0;
-        $remaining = count($feed);
-        foreach (array_chunk($feed, $adsPerExecution, true) as $chunk) {
-            $logger->info(sprintf('Обновляются %s объявлений(-я), id: %s', count($chunk), implode(', ', array_keys($chunk))));
-            try {
-                $commands = $this->getUpdateCommands($chunk, $currentState);
-                if ($commands) {
-                    $params = ['code' => $this->formatCode($commands)];
+        foreach ($adIds as $adId) {
+            $captcha = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA];
+            if ($captcha && strpos($captcha, 'sid=') !== false) {
+                $query = [];
+                parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
+                $sid = $query['sid'];
 
-                    foreach (array_keys($chunk) as $adId) {
-                        $captcha = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA];
-                        if ($captcha && strpos($captcha, 'sid=') !== false) {
-                            $query = [];
-                            parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
-                            $sid = $query['sid'];
-
-                            if ($code = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA_CODE]) {
-                                $params = array_replace($params, [
-                                    'captcha_sid' => $sid,
-                                    'captcha_key' => $code
-                                ]);
-                            }
-                        }
-                    }
-                    $rsp = $this->post('execute', $params);
-
-                    if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
-                        throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
-                    }
-
-                    foreach ($chunk as $adId => $_) {
-                        $feed[$adId] = array_replace($feed[$adId], [
-                            AdsFeed::COL_ADK_STATUS       => 'done',
-                            AdsFeed::COL_ADK_ERR          => '',
-                            AdsFeed::COL_ADK_CAPTCHA      => '',
-                            AdsFeed::COL_ADK_CAPTCHA_CODE => ''
-                        ]);
-                    }
-
-                    foreach ($rsp['ads'] as $r) {
-                        if (isset($r['error_desc'])) {
-                            $fails++;
-                            $feed[$r['id']] = array_replace($feed[$r['id']], [
-                                AdsFeed::COL_ADK_STATUS => 'failed',
-                                AdsFeed::COL_ADK_ERR    => "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ",
-                            ]);
-                        }
-                    }
-
-                    foreach ($rsp['posts'] as $r) {
-                        if (!isset($r['ok']) || $r['ok'] != 1) {
-                            $fails++;
-                            $feed[$r['adId']] = array_replace($feed[$r['adId']], [
-                                AdsFeed::COL_ADK_STATUS => 'failed',
-                                AdsFeed::COL_ADK_ERR    => $feed[$r['adId']][AdsFeed::COL_ADK_ERR] . "Не удалось обновить пост. ",
-                            ]);
-                        }
-                    }
-                }
-            } catch (CaptchaException $e) {
-                $logger->warning('Обновление прервано, для продолжения нужна капча.');
-                foreach ($chunk as $adId => $_) {
-                    $feed[$adId] = array_replace($feed[$adId], [
-                        AdsFeed::COL_ADK_STATUS       => 'failed',
-                        AdsFeed::COL_ADK_ERR          => "Для продолжения нужна капча",
-                        AdsFeed::COL_ADK_CAPTCHA      => $e->img,
-                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
-                    ]);
-
-                    return [self::UPDATE_STATUS_PARTIAL_INTERRUPTED, $feed];
-                }
-            } catch (\Exception $e) {
-                $logger->warning("При обновлении возникла проблема {$e->getMessage()}");
-                foreach ($chunk as $adId => $_) {
-                    $fails++;
-                    $feed[$adId] = array_replace($feed[$adId], [
-                        AdsFeed::COL_ADK_STATUS       => 'failed',
-                        AdsFeed::COL_ADK_ERR          => "Не удалось обновить объявление: {$e->getMessage()}",
-                        AdsFeed::COL_ADK_CAPTCHA      => '',
-                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
+                if ($code = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA_CODE]) {
+                    $params = array_replace($params, [
+                        'captcha_sid' => $sid,
+                        'captcha_key' => $code
                     ]);
                 }
             }
+        }
+        $rsp = $this->post('execute', $params);
 
-            $remaining -= count($chunk);
-            if ($remaining) {
-                $sleep = random_int(60, 80);
-                $logger->info("Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
-                sleep($sleep);
+        if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
+            throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
+        }
+
+        $errors = array_fill_keys($adIds, null);
+        foreach ($rsp['ads'] as $r) {
+            if (isset($r['error_desc'])) {
+                $errors[$r['id']] = "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ";
             }
         }
 
-        $logger->info('Загрузка окончена, см. таблицу загрузки с результатами обработки объявлений.');
+        foreach ($rsp['posts'] as $r) {
+            if (!isset($r['ok']) || $r['ok'] != 1) {
+                $errors[$r['adId']] = ($errors[$r['adId']] ?? '') . "Не удалось обновить пост. ";
+            }
+        }
 
-
-        return [$fails ? self::UPDATE_STATUS_PARTIAL_FAILURE : self::UPDATE_STATUS_DONE, $feed];
+        return $errors;
     }
 
     private function formatCode(array $commands): string

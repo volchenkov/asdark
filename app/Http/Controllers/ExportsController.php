@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Export;
-use App\Google\ApiClient as GoogleApiClient;
+use App\ExportLog;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -20,18 +20,26 @@ class ExportsController extends BaseController
         return view('exports-confirm', ['spreadsheetId' => $request->input('sid')]);
     }
 
-    public function logs(Request $request)
+    public function item(Request $request)
     {
-        $log = storage_path("logs/sheet-{$request->input('sid')}.log");
-        $formatted = str_replace(['[]', "\n"], ['', '<br/>'], file_get_contents($log));
+        $export = Export::findOrFail($request->input('export_id'));
+        $data = [
+            'export' => $export,
+            'logs'   => ExportLog::where('export_id', $export->id)->get()
+        ];
 
-        return response($formatted, 200, ['Refresh' => '2']);
+        $headers = [];
+        if (in_array($export->status, [Export::STATUS_PENDING, Export::STATUS_PROCESSING])) {
+            $headers = ['Refresh' => 2];
+        }
+
+        return response()->view('export', $data, 200, $headers);
     }
 
     public function cancel(Request $request)
     {
         $export = Export::find($request->input('id'));
-        $export->status = 'canceled';
+        $export->status = Export::STATUS_CANCELED;
         $export->saveOrFail();
 
         return redirect()->action('ExportsController@list');
@@ -41,7 +49,7 @@ class ExportsController extends BaseController
     {
         $export = new Export();
         $export->sid = $request->input('spreadsheetId');
-        $export->status = 'pending';
+        $export->status = Export::STATUS_PENDING;
 
         $export->saveOrFail();
 

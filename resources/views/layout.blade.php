@@ -45,12 +45,12 @@
                 </li>
                 @if ($vkConnection && isset($vkConnection->data['account_id']))
                     <li class="nav-item">
-                        <a href="/exports"
-                           class="nav-linksmall text-white mr-3">Загрузки</a>
-                    </li>
-                    <li class="nav-item">
                         <a href="/ads_edit_choose_client"
                            class="nav-linksmall text-white mr-3">Редактирование объявлений</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/exports"
+                           class="nav-linksmall text-white mr-3">Загрузки</a>
                     </li>
                 @endif
             </ul>

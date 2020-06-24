@@ -44,7 +44,7 @@
 
     <div class="row mb-5 mt-3">
         <div class="col-md-8">
-            <p class="small text-muted">Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. Ее можно будет поправить и загрузить в ВК</p>
+            <p class="small text-muted">Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. Ее можно будет поправить и загрузить в ВК. <a href="/help#editable-fields">Здесь</a> описание редактируемых полей.</p>
             <input class="btn btn-primary" type="submit" />
         </div>
     </div>

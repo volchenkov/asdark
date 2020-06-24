@@ -31,6 +31,7 @@ Route::middleware(['basicAuth'])->group(function () {
     Route::get('/exports_logs', 'ExportsController@logs');
     Route::get('/exports', 'ExportsController@list');
 
+    Route::get('/help', 'HelpController@index');
 
     Route::get('/ads_edit_form', 'AdsEditController@form');
     Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');

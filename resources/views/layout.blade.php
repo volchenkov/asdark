@@ -45,10 +45,6 @@
                 </li>
                 @if ($vkConnection && isset($vkConnection->data['account_id']))
                     <li class="nav-item">
-                        <a href="/exports_confirm"
-                           class="nav-linksmall text-white mr-3">Запустить загрузку</a>
-                    </li>
-                    <li class="nav-item">
                         <a href="/exports"
                            class="nav-linksmall text-white mr-3">Загрузки</a>
                     </li>

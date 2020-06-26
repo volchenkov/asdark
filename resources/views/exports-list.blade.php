@@ -16,7 +16,7 @@
             @foreach($exports as $export)
             <tr>
                 <td>
-                    {{ $export['created_at']->format('H:i:s') }}
+                    {{ $export['created_at']->addHours(3)->format('H:i:s') }}
                     <div class="small text-muted">{{ $export['created_at']->format('Y-m-d') }}</div>
                 </td>
                 <td>
@@ -24,7 +24,7 @@
                         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>
                     </div>
                 </td>
-                <td title="{{ $export['updated_at'] ? 'Обновлена '.$export['updated_at'] : ''  }}">
+                <td title="{{ $export['updated_at'] ? 'Обновлена '.$export['updated_at']->addHours(3) : ''  }}">
                     @php
                         $statuses = [
                             'pending'          => ['color' => 'info', 'title' => 'Ожидает'],

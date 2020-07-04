@@ -18,34 +18,19 @@
         <h2>Загрузка #{{ $export['id'] }}</h2>
     </div>
 </div>
-@if($export['status'] !== \App\Export::STATUS_PROCESSING)
-    <div class="row mb-4">
-        <div class="col-12">
-            @if(!in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                <a href="/exports_confirm?sid={{ $export['sid'] }}" class="btn btn-outline-secondary btn-sm mr-2" role="button">
-                    повторить
-                </a>
-            @endif
-            @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                <a href="/exports_cancel?id={{ $export['id'] }}" class="btn btn-outline-secondary btn-sm mr-2" role="button">
-                    отменить
-                </a>
-            @endif
-        </div>
-    </div>
-@endif
+
 <div class="row mb-2 bg-light">
+    <div class="col-md-3">
+        <div class="small text-muted">Статус</div>
+        <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
+    </div>
     <div class="col-md-6">
         <div class="small text-muted">Таблица</div>
         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank"> {{ $export['sid'] }} </a>
     </div>
-    <div class="col-md-2">
-        <div class="small text-muted">Статус</div>
-        <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
-    </div>
 </div>
-<div class="row mb-5 bg-light">
-    <div class="col-md-6">
+<div class="row mb-4 bg-light">
+    <div class="col-md-3">
         <div class="small text-muted">Автор</div>
         {{ $export['user']->name }}
     </div>
@@ -59,7 +44,22 @@
     </div>
 </div>
 
-
+@if($export['status'] !== \App\Export::STATUS_PROCESSING)
+    <div class="row mb-4">
+        <div class="col-12">
+            @if(!in_array($export['status'], [\App\Export::STATUS_PENDING]))
+                <a href="/exports_confirm?sid={{ $export['sid'] }}" class="btn btn-primary btn-sm mr-2" role="button">
+                    повторить загрузку
+                </a>
+            @endif
+            @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
+                <a href="/exports_cancel?id={{ $export['id'] }}" class="btn btn-secondary btn-sm mr-2" role="button">
+                    отменить загрузку
+                </a>
+            @endif
+        </div>
+    </div>
+@endif
 
 @if($export['status'] == 'failed')
 <div class="row mb-4">

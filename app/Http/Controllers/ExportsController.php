@@ -30,7 +30,7 @@ class ExportsController extends BaseController
 
         $headers = [];
         if (in_array($export->status, [Export::STATUS_PENDING, Export::STATUS_PROCESSING])) {
-            $headers = ['Refresh' => 2];
+            $headers = ['Refresh' => 5];
         }
 
         return response()->view('export', $data, 200, $headers);

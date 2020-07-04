@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,8 +14,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/login', function () {
+    return view('login');
+})->name('login');
 
-Route::middleware(['basicAuth'])->group(function () {
+Route::get('/google_redirect', 'GoogleOauthController@redirectToProvider');
+Route::get('/google_callback', 'GoogleOauthController@handleProviderCallback');
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
@@ -36,5 +43,11 @@ Route::middleware(['basicAuth'])->group(function () {
     Route::get('/ads_edit_form', 'AdsEditController@form');
     Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');
     Route::get('/ads_edit_generate', 'AdsEditController@generate');
+
+    Route::get('/logout', function () {
+        Auth::logout();
+        return redirect('/login');
+    });
+
 });
 

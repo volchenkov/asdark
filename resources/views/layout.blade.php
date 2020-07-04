@@ -41,18 +41,22 @@
 
                 <li class="nav-item">
                     <a href="/vk_auth_current_state"
-                       class="nav-linksmall text-white mr-3">Подключение ВК</a>
+                       class="nav-linksmall text-white">Подключение ВК</a>
                 </li>
                 @if ($vkConnection && isset($vkConnection->data['account_id']))
                     <li class="nav-item">
                         <a href="/ads_edit_choose_client"
-                           class="nav-linksmall text-white mr-3">Редактирование объявлений</a>
+                           class="nav-linksmall text-white">Редактирование объявлений</a>
                     </li>
                     <li class="nav-item">
                         <a href="/exports"
-                           class="nav-linksmall text-white mr-3">Загрузки</a>
+                           class="nav-linksmall text-white">Загрузки</a>
                     </li>
                 @endif
+
+                <li class="mt-4">
+                    <a href="/logout" class="nav-linksmall text-white" >Выход</a>
+                </li>
             </ul>
         </div>
         <div class="col pt-5">

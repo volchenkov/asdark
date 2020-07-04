@@ -38,7 +38,9 @@ class ApiClient
         }
         if ($permission) {
             $googleDrive = new \Google_Service_Drive($client);
-            $googleDrive->permissions->create($spreadsheet->getSpreadsheetId(), $permission);
+            $googleDrive->permissions->create($spreadsheet->getSpreadsheetId(), $permission, [
+                'sendNotificationEmail' => false
+            ]);
         }
 
         return $spreadsheet;

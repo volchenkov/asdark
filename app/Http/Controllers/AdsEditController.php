@@ -7,6 +7,7 @@ use App\Vk\AdsFeed;
 use App\Google\ApiClient as GoogleApiClient;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdsEditController extends BaseController
 {
@@ -60,8 +61,8 @@ class AdsEditController extends BaseController
             array_unshift($fields, AdsFeed::COL_CLIENT_ID);
         }
 
-        $getPostFields = function($entity) {
-            return array_keys(array_filter(AdsFeed::getEntityFields($entity), fn($f) => $f['editable']));
+        $getPostFields = function ($entity) {
+            return array_keys(array_filter(AdsFeed::getEntityFields($entity), fn ($f) => $f['editable']));
         };
 
         $fields = array_merge($fields, $getPostFields('ad'));
@@ -71,7 +72,7 @@ class AdsEditController extends BaseController
 
         $feed = $vk->getFeed(array_column($ads, 'id'), $fields);
 
-        usort($feed, fn($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
+        usort($feed, fn ($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 
         $headers = array_keys(array_values($feed)[0]);
         $rows = array_map('array_values', $feed);
@@ -83,7 +84,11 @@ class AdsEditController extends BaseController
         $spreadsheet = $google->createSpreadSheet(
             "asdark - редактирование объявлений ВК {$now}",
             $rows,
-            new \Google_Service_Drive_Permission(['role' => 'writer', 'type' => 'anyone'])
+            new \Google_Service_Drive_Permission([
+                'role'         => 'writer',
+                'type'         => 'user',
+                'emailAddress' => Auth::user()->email
+            ])
         );
 
         return redirect()->action('ExportsController@confirm', ['sid' => $spreadsheet->getSpreadsheetId()]);

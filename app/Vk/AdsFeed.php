@@ -32,6 +32,7 @@ class AdsFeed
     const COL_POST_ATTACHMENT_LINK_URL = 'post_attachment_link_url';
     const COL_POST_ATTACHMENT_LINK_TITLE = 'post_attachment_link_title';
     const COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE = 'post_attachment_link_button_action_type';
+    const COL_POST_ATTACHMENT_LINK_BUTTON_TITLE = 'post_attachment_link_button_action_title';
     const COL_POST_ID = 'post_id';
     const COL_AD_LINK_URL = 'ad_link_url';
     const COL_AD_TARGETING_COUNTRY = 'targeting_country';
@@ -46,57 +47,57 @@ class AdsFeed
             'entity'   => 'campaign',
             'desc'     => 'ID кампании'
         ],
-        self::COL_CAMPAIGN_NAME                           => [
+        self::COL_CAMPAIGN_NAME                            => [
             'editable' => false,
             'entity'   => 'campaign',
             'desc'     => 'Имя кампании'
         ],
-        self::COL_AD_ID                                   => [
+        self::COL_AD_ID                                    => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'ID объявления'
         ],
-        self::COL_AD_NAME                                 => [
+        self::COL_AD_NAME                                  => [
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Имя объявления'
         ],
-        self::COL_AD_TITLE                                => [
+        self::COL_AD_TITLE                                 => [
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Заголовок объявления'
         ],
-        self::COL_AD_DESCRIPTION                          => [
+        self::COL_AD_DESCRIPTION                           => [
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Описание объявления'
         ],
-        self::COL_AD_LINK_TITLE                          => [
+        self::COL_AD_LINK_TITLE                            => [
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Заголовок ссылки (рядом с кнопкой) объявления'
         ],
-        self::COL_AD_LINK_URL                             => [
+        self::COL_AD_LINK_URL                              => [
             'editable' => true,
             'entity'   => 'ad',
             'desc'     => 'Ссылка на рекламируемый объект'
         ],
-        self::COL_POST_TEXT                               => [
+        self::COL_POST_TEXT                                => [
             'editable' => true,
             'entity'   => 'post',
             'desc'     => 'Текст рекламного поста'
         ],
-        self::COL_POST_LINK_IMAGE                         => [
+        self::COL_POST_LINK_IMAGE                          => [
             'editable' => true,
             'entity'   => 'post',
             'desc'     => 'Картинка рекламного поста'
         ],
-        self::COL_POST_OWNER_ID                           => [
+        self::COL_POST_OWNER_ID                            => [
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'ID владельца поста, рекламируемой группы'
         ],
-        self::COL_POST_ID                                 => [
+        self::COL_POST_ID                                  => [
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'ID рекламного поста внутри группы'
@@ -114,7 +115,12 @@ class AdsFeed
         self::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE => [
             'editable' => false,
             'entity'   => 'post',
-            'desc'     => 'Текст кнопки пост'
+            'desc'     => 'Тип кнопки поста'
+        ],
+        self::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE       => [
+            'editable' => false,
+            'entity'   => 'post',
+            'desc'     => 'Текст кнопки поста'
         ],
         self::COL_AD_TARGETING_COUNTRY                    => [
             'editable' => false,
@@ -126,47 +132,47 @@ class AdsFeed
             'entity'   => 'ad',
             'desc'     => 'ID городов таргетинга через запятую'
         ],
-        self::COL_AUTOBIDDING                             => [
+        self::COL_AUTOBIDDING                              => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Автоуправление ценой (1 - включено, 0 - выключено)'
         ],
-        self::COL_AD_FORMAT                               => [
+        self::COL_AD_FORMAT                                => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Формат объявления'
         ],
-        self::COL_GOAL_TYPE                               => [
+        self::COL_GOAL_TYPE                                => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Цель'
         ],
-        self::COL_COST_TYPE                               => [
+        self::COL_COST_TYPE                                => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Форма оплаты'
         ],
-        self::COL_AD_OCPM                                 => [
+        self::COL_AD_OCPM                                  => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Оптимизированная цена за 1к показов, руб'
         ],
-        self::COL_AD_CATEGORY1                            => [
+        self::COL_AD_CATEGORY1                             => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Категория объявления'
         ],
-        self::COL_AD_DAY_LIMIT                            => [
+        self::COL_AD_DAY_LIMIT                             => [
             'editable' => false,
             'entity'   => 'ad',
             'desc'     => 'Дней лимит трат на объявление, руб'
         ],
-        self::COL_POST_ATTACHMENT_LINK_VIDEO_ID           => [
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_ID            => [
             'editable' => true,
             'entity'   => 'post',
             'desc'     => 'ID видео поста'
         ],
-        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID     => [
+        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID      => [
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'ID владельца (группы) видео поста'

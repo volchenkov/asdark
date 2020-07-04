@@ -24,7 +24,7 @@
 <form action="/exports_start" method="POST">
     @csrf
     <input type="hidden" name="spreadsheetId" value="{{ $spreadsheetId }}">
-    <div class="row mt-4">
+    <div class="row my-4">
         <div class="col-2 form-group">
             <input class="btn btn-primary"
                    value="Начать загрузку в ВК"

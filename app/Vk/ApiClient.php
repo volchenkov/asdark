@@ -126,6 +126,8 @@ class ApiClient
                     return $ad['post']['attachments'][0]['link']['title'] ?? null;
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE:
                     return $ad['post']['attachments'][0]['link']['button']['action']['type'] ?? null;
+                case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE:
+                    return $ad['post']['attachments'][0]['link']['button']['title'] ?? null;
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID:
                     return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
                 case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
@@ -283,10 +285,11 @@ class ApiClient
             $adId = $ad[AdsFeed::COL_AD_ID];
             $currentAd = $currentState[$adId];
 
-            $needUpdate = function ($field) use($ad, $currentAd) {
+            $needUpdate = function ($field) use ($ad, $currentAd) {
                 return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
             };
 
+            // поля объявления, которые нужно обновить
             $u = [];
             if ($needUpdate(AdsFeed::COL_AD_NAME)) {
                 $u['name'] = $ad[AdsFeed::COL_AD_NAME];
@@ -310,6 +313,7 @@ class ApiClient
                 ];
             }
 
+            // поля поста, которые нужно обновить
             $p = [];
             if ($needUpdate(AdsFeed::COL_POST_TEXT)) {
                 $p['message'] = $ad[AdsFeed::COL_POST_TEXT];
@@ -317,29 +321,14 @@ class ApiClient
             if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_URL)) {
                 $p['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
             }
-            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE)) {
-                $p['link_button'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
-            }
             if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE)) {
                 $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
             }
             if ($needUpdate(AdsFeed::COL_POST_LINK_IMAGE)) {
                 $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
             }
-            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE)) {
-                $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
-            }
             if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID)) {
                 $p['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
-
-                // параметр link_video может быть указан только вместе с параметрами link_button, link_title.
-                // если они не были заданы для изменения, использовать существующее значение
-                if (!isset($p['link_button'])) {
-                    $p['link_button'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
-                }
-                if (!isset($p['link_title'])) {
-                    $p['link_title'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
-                }
             }
 
             if ($p) {
@@ -353,8 +342,16 @@ class ApiClient
                 if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE]) {
                     $fields['link_title'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
                 }
-                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE]) {
-                    $fields['link_button'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE];
+                // В ВК разделены понятия типа кнопки и текста кнопки, однако при загрузке
+                // принимается лишь один параметр link_button - строковая константа из списка,
+                // по которой, в совокупности с тем, куда ведет ссылка кнопки, будет определ и текст и тип.
+                // Т.к. из API возвращается и тип и текст, а для обратной загрузки доступна только одна константа
+                // - определяем ее по тексту и месту назначения ссылки
+                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE]) {
+                    $fields['link_button'] = $this->getLinkButtonByTitle(
+                        $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE],
+                        $p['attachments'] ?? $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]
+                    );
                 }
                 if ($currentAd[AdsFeed::COL_POST_LINK_IMAGE]) {
                     $fields['link_image'] = $currentAd[AdsFeed::COL_POST_LINK_IMAGE];
@@ -439,7 +436,7 @@ class ApiClient
 
     private function addDefaultParams(array $params): array
     {
-        $conn =  $this->getConnection();
+        $conn = $this->getConnection();
         $defaults = [
             'access_token' => $conn->data['access_token'],
             'v'            => self::VERSION
@@ -470,8 +467,68 @@ class ApiClient
         if (!is_array($sizes) || !$sizes) {
             return null;
         }
-        usort($sizes, fn($a, $b) => $b['width'] <=> $a['width']);
+        usort($sizes, fn ($a, $b) => $b['width'] <=> $a['width']);
 
         return $sizes[0]['url'] ?? null;
+    }
+
+    /*
+     * Преобразование возвращенного из API заголовка кнопки в соответственное значение, пригодное для обратной загрузки
+     * @see https://vk.com/dev/wall.postAdsStealth
+     */
+    private function getLinkButtonByTitle(string $title, string $link): string
+    {
+        $buttons = [
+            'Запустить'            => 'app_join',
+            'Перейти'              => 'open_url',
+            'Открыть'              => 'open',
+            'Подробнее'            => 'more',
+            'Позвонить'            => 'call',
+            'Забронировать'        => 'book',
+            'Записаться'           => 'enroll',
+            'Зарегистрироваться'   => 'register',
+            'Купить'               => 'buy',
+            'Купить билет'         => 'buy_ticket',
+            'Заказать'             => 'order',
+            'Создать'              => 'create',
+            'Установить'           => 'install',
+            'Заполнить'            => 'fill',
+            'Подписаться'          => 'join_public',
+            'Я пойду'              => 'join_event',
+            'Вступить'             => 'join',
+            'Связаться'            => 'im',                 // Сообщества, публичные страницы, события
+            //  'Связаться'        => 'contact',            // Внешние сайты
+            'Начать'               => 'begin',
+            'Получить'             => 'get',
+            'Смотреть'             => 'watch',
+            'Скачать'              => 'download',
+            'Участвовать'          => 'participate',
+            'Играть'               => 'app_game_join',       // Игры
+            // 'Играть'            => 'play',                // Внешние сайты
+            'Подать заявку'        => 'apply',
+            'Получить предложение' => 'get_an_offer',
+            'Написать'             => 'im2',                 // Сообщества, публичные страницы, события
+            //  'Написать'         => 'to_write',            // Внешние сайты
+            'Откликнуться'         => 'reply',
+        ];
+
+        if (!isset($buttons[$title])) {
+            throw new \UnexpectedValueException("Unexpected button title '{$title}'");
+        }
+
+        // обработка конфликтов названий кнопок для разных типов ссылок
+        $isExternalURL = strpos($link, 'vk.') !== false;
+
+        // конфликтующие значение для внешних сайтов
+        $conflicts = [
+            'Связаться' => 'contact',
+            'Играть'    => 'play',
+            'Написать'  => 'to_write',
+        ];
+        if (in_array($title, $conflicts) && $isExternalURL) {
+            return $conflicts[$title];
+        }
+
+        return $buttons[$title];
     }
 }

@@ -27,7 +27,7 @@
                     <option value="{{ $campaign['id'] }}"> {{ $campaign['name'] }}</option>
                 @endforeach
             </select>
-            <div class="text-muted small">Ctrl+F для поиска, зажать Сtrl для выбора нескольких</div>
+                <div class="text-muted small"><strong>Ctrl + F</strong> для поиска, <strong>удерживать Сtrl</strong> для выбора нескольких</div>
             @endif
         </div>
     </div>
@@ -46,7 +46,9 @@
 
     <div class="row mb-5 mt-3">
         <div class="col-md-8">
-            <p class="small text-muted">Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. Ее можно будет поправить и загрузить в ВК. <a href="/help#editable-fields" target="_blank">Здесь</a> описание редактируемых полей.</p>
+            <p class="small text-muted">
+                Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. <a href="/help#editable-fields" target="_blank">Список редактируемых полей</a>
+            </p>
             <input class="btn btn-primary" type="submit" />
         </div>
     </div>

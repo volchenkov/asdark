@@ -62,8 +62,6 @@
         <div class="col pt-5 offset-2">
             @yield('content')
         </div>
-        <div class="col-1 pt-5">
-        </div>
     </div>
 </div>
 </body>

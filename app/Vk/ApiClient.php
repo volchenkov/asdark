@@ -414,8 +414,22 @@ class ApiClient
 
         $data = \json_decode($rsp->getBody()->getContents(), true);
 
-        if (is_null($data) || !isset($data['response'])) {
-            throw new \RuntimeException("Failed to decode response: {$method} " . (string)$rsp->getBody());
+        if (is_null($data)) {
+            throw new \RuntimeException("No response data: {$method} " . (string)$rsp->getBody());
+        }
+
+        if (isset($data['error'])) {
+            $error = json_decode($data['error'], true);
+
+            if (isset($error['error_code']) && $error['error_code'] == 9) {
+                throw new FloodControlException($error['error_msg'] ?? 'Unexpected error');
+            }
+
+            throw new ErrorResponseException($error['error_msg'] ?? 'Unexpected error');
+        }
+
+        if (!isset($data['response'])) {
+            throw new \RuntimeException("Failed to decode response: {$method}" . (string)$rsp->getBody());
         }
 
         sleep(1);

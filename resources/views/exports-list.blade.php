@@ -7,6 +7,7 @@
             <thead>
             <tr>
                 <th scope="col">Создана</th>
+                <th scope="col">Автор</th>
                 <th scope="col">Google таблица</th>
                 <th scope="col">Статус</th>
                 <th scope="col"></th>
@@ -19,6 +20,7 @@
                     {{ $export['created_at']->addHours(3)->format('H:i:s') }}
                     <div class="small text-muted">{{ $export['created_at']->format('Y-m-d') }}</div>
                 </td>
+                <td>{{ $export['user']->name }}</td>
                 <td>
                     <div>
                         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>

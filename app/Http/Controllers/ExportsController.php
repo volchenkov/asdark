@@ -12,7 +12,7 @@ class ExportsController extends BaseController
 
     public function list()
     {
-        return view('exports-list', ['exports' => Export::all()->sortByDEsc('id')]);
+        return view('exports-list', ['exports' => Export::with('user')->get()->sortByDEsc('id')]);
     }
 
     public function confirm(Request $request)
@@ -22,7 +22,7 @@ class ExportsController extends BaseController
 
     public function item(Request $request)
     {
-        $export = Export::findOrFail($request->input('export_id'));
+        $export = Export::with('user')->findOrFail($request->input('export_id'));
         $data = [
             'export' => $export,
             'logs'   => ExportLog::where('export_id', $export->id)->get()

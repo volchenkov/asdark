@@ -18,7 +18,7 @@
         <h2>Загрузка #{{ $export['id'] }}</h2>
     </div>
 </div>
-<div class="row mb-4">
+<div class="row mb-2 bg-light">
     <div class="col-md-6">
         <div class="small text-muted">Таблица</div>
         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank"> {{ $export['sid'] }} </a>
@@ -26,6 +26,12 @@
     <div class="col-md-2">
         <div class="small text-muted">Статус</div>
         <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
+    </div>
+</div>
+<div class="row mb-5 bg-light">
+    <div class="col-md-6">
+        <div class="small text-muted">Автор</div>
+        {{ $export['user']->name }}
     </div>
     <div class="col-md-2">
         <div class="small text-muted">Создана</div>

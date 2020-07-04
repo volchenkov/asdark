@@ -18,4 +18,12 @@ class Export extends Model
     protected $table = 'exports';
 
 
+    /**
+     * Get the post that owns the comment.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

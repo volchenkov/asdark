@@ -14,6 +14,7 @@
                     <option value="{{ $client['id'] }}"> {{ $client['name'] }}</option>
                 @endforeach
             </select>
+            <div class="text-muted small">Ctrl+F для поиска</div>
         </div>
     </div>
     <div class="row mb-5">

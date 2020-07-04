@@ -16,7 +16,7 @@
             @if (!$campaigns)
                 <p><strong>Не найдено ни одной кампании клиента.</strong></p>
             @else
-            <label for="campaign_ids">Кампании (Ctrl для выбора нескольких):</label>
+            <label for="campaign_ids">Кампании:</label>
             <select name="campaign_ids[]"
                     id="campaign_ids"
                     class="form-control"
@@ -27,24 +27,26 @@
                     <option value="{{ $campaign['id'] }}"> {{ $campaign['name'] }}</option>
                 @endforeach
             </select>
+            <div class="text-muted small">Ctrl+F для поиска, зажать Сtrl для выбора нескольких</div>
             @endif
         </div>
     </div>
     <div class="row ">
         <div class="col-12">
-            <div class="form-check" title="Отметьте, если нужно редактировать поля рекламного поста, привязанного к объявлению">
+            <div class="form-check">
                 <input type="checkbox"
                        name="need_posts"
                        id="need_posts"
                        class="form-check-input" />
                 <label for="need_posts" class="form-check-label">добавить поля постов</label>
             </div>
+            <div class="text-muted small">Отметьте, если нужно редактировать поля рекламного поста, привязанного к объявлению</div>
         </div>
     </div>
 
     <div class="row mb-5 mt-3">
         <div class="col-md-8">
-            <p class="small text-muted">Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. Ее можно будет поправить и загрузить в ВК. <a href="/help#editable-fields">Здесь</a> описание редактируемых полей.</p>
+            <p class="small text-muted">Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. Ее можно будет поправить и загрузить в ВК. <a href="/help#editable-fields" target="_blank">Здесь</a> описание редактируемых полей.</p>
             <input class="btn btn-primary" type="submit" />
         </div>
     </div>

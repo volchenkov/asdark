@@ -6,6 +6,7 @@ use App\Export;
 use App\ExportLog;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Auth;
 
 class ExportsController extends BaseController
 {
@@ -50,6 +51,7 @@ class ExportsController extends BaseController
         $export = new Export();
         $export->sid = $request->input('spreadsheetId');
         $export->status = Export::STATUS_PENDING;
+        $export->user_id = Auth::user()->id;
 
         $export->saveOrFail();
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Connection;
 use App\Vk\ApiClient as VkApiClient;
 use App\Vk\AdsFeed;
 use App\Google\ApiClient as GoogleApiClient;
@@ -12,17 +13,26 @@ use Illuminate\Support\Facades\Auth;
 class AdsEditController extends BaseController
 {
 
+    public function index()
+    {
+        $vkConnection = Connection::where('system', 'vk')->firstOrFail();
+        if ($vkConnection->isAgency()) {
+            return redirect()->action('AdsEditController@chooseClient');
+        }
+
+        return redirect()->action('AdsEditController@form');
+    }
+
     public function chooseClient(Request $request)
     {
         $vk = new VkApiClient();
         $clients = $vk->getClients();
-
-        if (is_array($clients)) {
-            usort($clients, fn ($a, $b) => strcmp($a["name"], $b["name"]));
-            return view('ads-edit-choose-client', ['clients' => $clients]);
-        } else {
-            return redirect()->action('AdsEditController@form');
+        if (!is_array($clients)) {
+            return 'Выбор клиентов доступен только для агентского кабинета ВК';
         }
+        usort($clients, fn ($a, $b) => strcmp($a["name"], $b["name"]));
+
+        return view('ads-edit-choose-client', ['clients' => $clients]);
     }
 
     public function form(Request $request)

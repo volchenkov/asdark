@@ -45,7 +45,7 @@
                 </li>
                 @if ($vkConnection && isset($vkConnection->data['account_id']))
                     <li class="nav-item">
-                        <a href="/ads_edit_choose_client"
+                        <a href="/ads_edit"
                            class="nav-linksmall text-white">Редактирование объявлений</a>
                     </li>
                     <li class="nav-item">

@@ -85,7 +85,7 @@ class ApiClient
 
     public function getClients(): ?array
     {
-        if ($this->getConnection()->data['account_type'] !== "agency") {
+        if (!$this->getConnection()->isAgency()) {
             return null;
         }
 

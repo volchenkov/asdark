@@ -12,7 +12,7 @@
             </div>
         </div>
         <div class="col-12">
-            <p>Чтобы начать редактирование, перейдите <a href="/ads_edit_choose_client">сюда</a>.
+            <p>Чтобы начать редактирование, перейдите <a href="/ads_edit">сюда</a>.
         </div>
     </div>
 @endsection

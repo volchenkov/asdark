@@ -15,4 +15,10 @@ class Connection extends Model
 
     protected $fillable = ['system'];
 
+
+    public function isAgency()
+    {
+        return $this->data['account_type'] === "agency";
+    }
+
 }

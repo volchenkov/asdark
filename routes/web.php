@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/help', 'HelpController@index');
 
+    Route::get('/ads_edit', 'AdsEditController@index');
     Route::get('/ads_edit_form', 'AdsEditController@form');
     Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');
     Route::get('/ads_edit_generate', 'AdsEditController@generate');

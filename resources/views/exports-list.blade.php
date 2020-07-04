@@ -8,7 +8,7 @@
             <tr>
                 <th scope="col">Создана</th>
                 <th scope="col">Автор</th>
-                <th scope="col">Google таблица</th>
+                <th scope="col">Таблица объявлений</th>
                 <th scope="col">Статус</th>
                 <th scope="col"></th>
             </tr>

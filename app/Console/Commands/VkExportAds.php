@@ -54,6 +54,7 @@ class VkExportAds extends Command
         try {
             $export->status = Export::STATUS_PROCESSING;
             $export->save();
+
             $fails = $this->exportAds($export);
             if (is_null($fails)) {
                 $status = Export::STATUS_INTERRUPTED;
@@ -63,6 +64,7 @@ class VkExportAds extends Command
                 $status = Export::STATUS_DONE;
             }
             $failure = null;
+
             $this->log($export->id, 'Загрузка завершилась');
         } catch (\Throwable $e) {
             $this->log($export->id, "Обновление прервано из-за ошибки: {$e->getMessage()}", ExportLog::LEVEL_ERROR);

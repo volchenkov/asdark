@@ -162,18 +162,22 @@ class VkExportAds extends Command
                     ]);
 
                     /** @TODO refactor this: хотфикс для заполнения фида, в случае капчи */
-                    $feed = array_values($feed);
-                    $headers = array_keys($feed[0]);
-                    $this->google->writeCells($export->sid, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
+                    try {
+                        $feed = array_values($feed);
+                        $headers = array_keys($feed[0]);
+                        $this->google->writeCells($export->sid, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
 
-                    $A1 = GoogleApiClient::getA1Cols($headers);
+                        $A1 = GoogleApiClient::getA1Cols($headers);
 
-                    $result = [];
-                    foreach ($feed as $row) {
-                        $result[] = array_intersect_key($row, array_fill_keys($adkCols, null));
+                        $result = [];
+                        foreach ($feed as $row) {
+                            $result[] = array_intersect_key($row, array_fill_keys($adkCols, null));
+                        }
+                        $range = self::FEED_SHEET_TITLE . '!' . "{$A1[$adkCols[0]]}2:{$A1[$adkCols[count($adkCols) - 1]]}" . (1 + count($result));
+                        $this->google->writeCells($export->sid, $range, $result);
+                    } catch (\Exception $e) {
+                        $this->log($export->id, 'Не удалось обновить Google таблицу результатами загрузки.', ExportLog::LEVEL_ERROR);
                     }
-                    $range = self::FEED_SHEET_TITLE . '!' . "{$A1[$adkCols[0]]}2:{$A1[$adkCols[count($adkCols) - 1]]}" . (1 + count($result));
-                    $this->google->writeCells($export->sid, $range, $result);
 
                     return null;
                 }

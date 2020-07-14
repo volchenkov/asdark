@@ -415,8 +415,8 @@ class ApiClient
             throw new \RuntimeException("No response data: {$method} " . (string)$rsp->getBody());
         }
 
-        if (isset($data['error'])) {
-            $error = json_decode($data['error'], true);
+        if (isset($data['error']) && is_array($data['error'])) {
+            $error = $data['error'];
 
             if (isset($error['error_code']) && $error['error_code'] == 9) {
                 throw new FloodControlException($error['error_msg'] ?? 'Unexpected error');

@@ -3,7 +3,8 @@
 @section('content')
 <div class="row">
     <div class="col-md-8">
-        <p>Для продолжения выберите кампании, объявлений которых хотите редактировать. Также ознакомьтесь с <a href="/help#caveats">ограничениями редактирования</a></p>
+        <div>Для продолжения выберите кампании, объявлений которых хотите редактировать.</div>
+        <p>Также ознакомьтесь с <a href="/help#caveats">ограничениями редактирования</a> и <a href="/help#editable-fields" target="_blank">списком редактируемых полей</a></p>
     </div>
 </div>
 <form action="/ads_edit_generate">
@@ -38,16 +39,15 @@
                        name="need_posts"
                        id="need_posts"
                        class="form-check-input" />
-                <label for="need_posts" class="form-check-label">добавить поля постов</label>
+                <label for="need_posts" class="form-check-label">добавить поля постов <span title="Отметьте, если нужно редактировать поля рекламного поста, привязанного к объявлению">&#9432</span></label>
             </div>
-            <div class="text-muted small">Отметьте, если нужно редактировать поля рекламного поста, привязанного к объявлению</div>
         </div>
     </div>
 
     <div class="row mb-5 mt-3">
         <div class="col-md-8">
             <p class="small text-muted">
-                Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний. <a href="/help#editable-fields" target="_blank">Список редактируемых полей</a>
+                Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний
             </p>
             <input class="btn btn-primary" type="submit" />
         </div>

@@ -121,10 +121,20 @@ class VkExportAds extends Command
      * @throws CaptchaException
      * @throws \Exception
      */
-    private function executePlan(Export $export)
+    private function executePlan(Export $export): void
     {
         /** @var Collection $operations */
         $operations = ExportOperation::where('export_id', $export->id)->where('status', 'pending')->get();
+        if ($operations->count() == 0) {
+            $this->log($export->id, "Нет изменений для загрузки", ExportLog::LEVEL_NOTICE);
+            return;
+        }
+
+        $this->log($export->id, sprintf("Запланировано %s операций для %s объявлений",
+            $operations->count(),
+            $operations->pluck('ad_id')->unique()->count()
+        ));
+
 
         $captcha = $export->captcha;
         $captchaCode = $export->captcha_code;
@@ -135,10 +145,9 @@ class VkExportAds extends Command
         /** @var Collection $chunk */
         foreach ($operations->groupBy('ad_id')->chunk(5) as $chunk) {
             $chunk = $chunk->collapse();
-            $this->log($export->id, sprintf(
-                "Обновляются объявления %s",
-                implode(', ', $chunk->pluck('ad_id')->unique()->values()->all()
-            )));
+
+            $adIds = $chunk->pluck('ad_id')->unique()->values()->all();
+            $this->log($export->id, "Обновляются объявления " . implode(', ', $adIds));
             try {
                 foreach ($chunk as $operation) {
                     $operation->status = ExportOperation::STATUS_PROCESSING;

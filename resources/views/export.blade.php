@@ -97,7 +97,8 @@
             $logColors = [
                 \App\ExportLog::LEVEL_ERROR   => 'danger',
                 \App\ExportLog::LEVEL_WARNING => 'warning',
-                \App\ExportLog::LEVEL_INFO    => 'default',
+                \App\ExportLog::LEVEL_NOTICE  => 'dark',
+                \App\ExportLog::LEVEL_INFO    => 'secondary',
             ];
         @endphp
         @foreach($logs->sortBy('id') as $log)

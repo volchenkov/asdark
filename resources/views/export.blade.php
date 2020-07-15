@@ -11,7 +11,15 @@
         'failed'           => ['color' => 'danger', 'title' => 'Провалена'],
         'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча'],
         'canceled'         => ['color' => 'muted', 'title' => 'Отменена']
-    ]
+    ];
+
+    $operationStatuses = [
+        \App\ExportOperation::STATUS_DONE       => ['title' => 'Готова', 'color' => 'success'],
+        \App\ExportOperation::STATUS_PENDING    => ['title' => 'В ожидании', 'color' => 'info'],
+        \App\ExportOperation::STATUS_FAILED     => ['title' => 'Ошибка', 'color' => 'danger'],
+        \App\ExportOperation::STATUS_ABORTED    => ['title' => 'Прекращена', 'color' => 'warning'],
+        \App\ExportOperation::STATUS_PROCESSING => ['title' => 'В работе', 'color' => 'info'],
+    ];
 @endphp
 <div class="row mb-2">
     <div class="col-12">
@@ -61,27 +69,52 @@
     </div>
 @endif
 
-@if($export['status'] == 'failed')
-<div class="row mb-4">
-    <div class="col-8">
-        <h4>Ошибка выполнения</h4>
-        <p class="text-danger">{{ $export['failure'] }}</p>
-    </div>
-</div>
-@endif
-
-@if ($logs->count() > 0)
 <div class="row mb-4">
     <div class="col-12">
-        <h4>Логи</h4>
+        @if($export->operations->count() > 0)
+            <div class="border p-2 my-2">
+                <span>Запланировано <strong>{{ $export->operations->count() }}</strong> операций: </span>
+                @foreach($export->operations->groupBy('status') as $status => $chunk)
+                    <span class="ml-2 text-{{ $operationStatuses[$status]['color'] }}">
+                        {{ $operationStatuses[$status]['title'] }} <strong>{{ $chunk->count() }}</strong>
+                    </span>
+                @endforeach
+            </div>
+        @endif
+
+        @php
+            $logColors = [
+                \App\ExportLog::LEVEL_ERROR   => 'danger',
+                \App\ExportLog::LEVEL_WARNING => 'warning',
+                \App\ExportLog::LEVEL_INFO    => 'default',
+            ];
+        @endphp
         @foreach($logs->sortBy('id') as $log)
             <div>
                 <span class="text-black-50 small">{{ $log->created_at }}</span>
-                <span class="text-{{ $log->level == 'info' ? 'default' : $log->level }}"></span> {{ $log->message }}
+                <span class="text-{{ $logColors[$log->level] }}"> {{ $log->message }} </span>
             </div>
         @endforeach
     </div>
 </div>
+
+@if($export['status'] == 'failed')
+    <div class="row mb-2">
+        <div class="col-12 alert alert-warning">
+            <h4>Произошла ошибка</h4>
+            <p>{{ $export['failure'] }}</p>
+        </div>
+    </div>
+@endif
+
+@if(in_array($export['status'], [\App\Export::STATUS_PENDING, \App\Export::STATUS_PROCESSING]))
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-secondary" role="status">
+                <span class="sr-only">Загрузка...</span>
+            </div>
+        </div>
+    </div>
 @endif
 
 @endsection

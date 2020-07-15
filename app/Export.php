@@ -26,4 +26,9 @@ class Export extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function operations()
+    {
+        return $this->hasMany(ExportOperation::class);
+    }
+
 }

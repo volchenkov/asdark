@@ -64,6 +64,7 @@ class VkExportAds extends Command
             $status = Export::STATUS_DONE;
             $failure = null;
             if (count($feed) > 0) {
+                $this->log($export->id, 'Составляется план загрузки');
                 $planner = new ExportPlanner($this->vk, $export->id);
                 $planner->plan($feed);
 

@@ -12,7 +12,7 @@ $statuses = [
 ];
 $types = [
     \App\ExportOperation::TYPE_UPDATE_AD   => 'объявление',
-    \App\ExportOperation::TYPE_UPDATE_POST => 'поста объявления',
+    \App\ExportOperation::TYPE_UPDATE_POST => 'пост объявления',
 ];
 @endphp
 
@@ -22,7 +22,7 @@ $types = [
         <table class="table table-sm mt-4">
             <thead>
                 <tr>
-                    <th scope="col" style="width: 8.33%">Статус</th>
+                    <th scope="col" style="width: 16.66%" class="text-center">Статус</th>
                     <th scope="col">Изменения</th>
                 </tr>
             </thead>
@@ -30,9 +30,11 @@ $types = [
                 <tbody>
                 @foreach($operations as $operation)
                     <tr>
-                        <td><span class="text-{{ $statuses[$operation->status]['color'] }}">{{ $statuses[$operation->status]['title'] }}</span></td>
+                        <td class="text-center">
+                            <span class="text-{{ $statuses[$operation->status]['color'] }}">{{ $statuses[$operation->status]['title'] }}</span>
+                        </td>
                         <td>
-                            <span>{{ $types[$operation->type] }} {{$adId}}</span>
+                            <span>{{ $types[$operation->type] }} #{{$adId}}</span>
                             @foreach($operation->state_to as $field => $newValue)
                             <div class="small">
                                 <strong>{{ $field }}</strong>

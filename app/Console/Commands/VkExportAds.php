@@ -151,7 +151,7 @@ class VkExportAds extends Command
             $chunk = $chunk->collapse();
 
             $adIds = $chunk->pluck('ad_id')->unique()->values()->all();
-            $this->log($export->id, "Обновляются объявления " . implode(', ', $adIds));
+            $this->log($export->id, "Обновляются объявления: " . implode(', ', $adIds));
             try {
                 foreach ($chunk as $operation) {
                     $operation->status = ExportOperation::STATUS_PROCESSING;
@@ -167,7 +167,7 @@ class VkExportAds extends Command
                     $captcha = null;
                     $captchaCode = null;
                     $sleep = random_int(60, 80);
-                    $this->log($export->id, "Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
+                    $this->log($export->id, "Осталость {$remaining} операций. Ждем {$sleep} секунд из-за капчи.");
                     sleep($sleep);
                 }
             } catch (\Exception $e) {

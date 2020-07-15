@@ -55,7 +55,7 @@
                 @endif
 
                 <li class="mt-4">
-                    <a href="/logout" class="nav-linksmall text-white" >Выход</a>
+                    <a href="/logout" class="nav-linksmall text-white">Выход</a>
                 </li>
             </ul>
         </div>

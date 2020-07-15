@@ -50,20 +50,31 @@
         <div class="small text-muted">Обновлена</div>
         {{ $export['updated_at']->addHours(3) }}
     </div>
+    @if($export['captcha_code'])
+        <div class="col-md-2">
+            <div class="small text-muted">Капча</div>
+            {{ $export['captcha_code'] }}
+        </div>
+    @endif
 </div>
 
 @if($export['status'] !== \App\Export::STATUS_PROCESSING)
     <div class="row mb-4">
         <div class="col-12">
-            @if(!in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                <a href="/exports_confirm?sid={{ $export['sid'] }}" class="btn btn-primary btn-sm mr-2" role="button">
-                    повторить загрузку
-                </a>
-            @endif
-            @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                <a href="/exports_cancel?id={{ $export['id'] }}" class="btn btn-secondary btn-sm mr-2" role="button">
-                    отменить загрузку
-                </a>
+            @if($export['status'] == \App\Export::STATUS_INTERRUPTED)
+                <a href="exports_captcha?export_id={{ $export['id'] }}" class="btn btn-success btn-sm mr-1" role="button">ввести капчу</a>
+            @else
+                @if(!in_array($export['status'], [\App\Export::STATUS_PENDING]))
+                    <a href="/exports_confirm?sid={{ $export['sid'] }}" class="btn btn-primary btn-sm mr-1" role="button">
+                        повторить загрузку
+                    </a>
+                @endif
+
+                @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
+                    <a href="/exports_cancel?id={{ $export['id'] }}" class="btn btn-secondary btn-sm mr-1" role="button">
+                        отменить загрузку
+                    </a>
+                @endif
             @endif
         </div>
     </div>
@@ -101,13 +112,13 @@
 @if($export['status'] == 'failed')
     <div class="row mb-2">
         <div class="col-12 alert alert-warning">
-            <h4>Произошла ошибка</h4>
+            <h5>Произошла ошибка</h5>
             <p>{{ $export['failure'] }}</p>
         </div>
     </div>
 @endif
 
-@if(in_array($export['status'], [\App\Export::STATUS_PENDING, \App\Export::STATUS_PROCESSING]))
+@if(in_array($export['status'], [\App\Export::STATUS_PROCESSING]))
     <div class="row mb-4">
         <div class="col-12 text-center">
             <div class="spinner-border text-secondary" role="status">

@@ -16,6 +16,11 @@ class ExportsController extends BaseController
         return view('exports-list', ['exports' => Export::with('user')->get()->sortByDEsc('id')]);
     }
 
+    public function captcha(Request $request)
+    {
+        return view('exports-captcha', ['export' => Export::findOrFail($request->input('export_id'))]);
+    }
+
     public function confirm(Request $request)
     {
         return view('exports-confirm', ['spreadsheetId' => $request->input('sid')]);
@@ -53,6 +58,12 @@ class ExportsController extends BaseController
         $export->status = Export::STATUS_PENDING;
         $export->user_id = Auth::user()->id;
 
+        if ($captcha = $request->input('captcha')) {
+            $export->captcha = $captcha;
+        }
+        if ($captchaCode = $request->input('captcha_code')) {
+            $export->captcha_code = $captchaCode;
+        }
         $export->saveOrFail();
 
         return redirect()->action('ExportsController@started');

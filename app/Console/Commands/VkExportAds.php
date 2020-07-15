@@ -68,7 +68,7 @@ class VkExportAds extends Command
                 $planner = new ExportPlanner($this->vk, $export->id);
                 $planner->plan($feed);
 
-                $this->executePlan($export->id);
+                $this->executePlan($export);
 
                 $fails = ExportOperation::where('export_id', $export->id)
                     ->where('status', 'failed')
@@ -81,6 +81,12 @@ class VkExportAds extends Command
                 $this->log($export->id, 'Файл загрузки пуст');
             }
             $this->log($export->id, 'Загрузка завершилась');
+        } catch (CaptchaException $e) {
+            $this->log($export->id, "Обновление прервано, для продолжения нужна капча");
+            $status = Export::STATUS_INTERRUPTED;
+            $failure = null;
+            $export->captcha = $e->img;
+            $export->captcha_code = null;
         } catch (\Throwable $e) {
             $this->log($export->id, "Обновление прервано из-за ошибки: {$e->getMessage()}", ExportLog::LEVEL_ERROR);
             $status = Export::STATUS_FAILED;
@@ -110,10 +116,18 @@ class VkExportAds extends Command
         return $feed;
     }
 
-    private function executePlan(int $exportId)
+    /**
+     * @param Export $export
+     * @throws CaptchaException
+     * @throws \Exception
+     */
+    private function executePlan(Export $export)
     {
         /** @var Collection $operations */
-        $operations = ExportOperation::where('export_id', $exportId)->where('status', 'pending')->get();
+        $operations = ExportOperation::where('export_id', $export->id)->where('status', 'pending')->get();
+
+        $captcha = $export->captcha;
+        $captchaCode = $export->captcha_code;
 
         $remaining = $operations->count();
         // обновляем по 5 за раз из-за ограничений API
@@ -121,21 +135,26 @@ class VkExportAds extends Command
         /** @var Collection $chunk */
         foreach ($operations->groupBy('ad_id')->chunk(5) as $chunk) {
             $chunk = $chunk->collapse();
-            $this->log($exportId, "Обновляются объявления ".implode(', ', $chunk->pluck('ad_id')->all()));
+            $this->log($export->id, sprintf(
+                "Обновляются объявления %s",
+                implode(', ', $chunk->pluck('ad_id')->unique()->values()->all()
+            )));
             try {
                 foreach ($chunk as $operation) {
                     $operation->status = ExportOperation::STATUS_PROCESSING;
                     $operation->save();
                 }
-                $this->vk->batchUpdate($chunk);
+                $this->vk->batchUpdate($chunk, $captcha, $captchaCode);
                 foreach ($chunk as $operation) {
                     $operation->save();
                 }
 
                 $remaining -= $chunk->count();
                 if ($remaining) {
+                    $captcha = null;
+                    $captchaCode = null;
                     $sleep = random_int(60, 80);
-                    $this->log($exportId, "Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
+                    $this->log($export->id, "Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
                     sleep($sleep);
                 }
             } catch (\Exception $e) {

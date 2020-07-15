@@ -201,13 +201,20 @@ class ApiClient
         return $rows;
     }
 
+    /**
+     * @param Collection $operations
+     * @param null $captcha
+     * @param null $captchaCode
+     * @return Collection
+     * @throws CaptchaException
+     */
     public function batchUpdate(Collection $operations, $captcha = null, $captchaCode = null): Collection
     {
         $params = ['code' => $this->formatCode($operations)];
 
-        if ($captcha && $captchaCode) {
+        if ($captcha && $captchaSid = $this->fetchCaptchaSid($captcha) && $captchaCode) {
             $params = array_replace($params, [
-                'captcha_sid' => $captcha,
+                'captcha_sid' => $captchaSid,
                 'captcha_key' => $captchaCode
             ]);
         }
@@ -507,6 +514,19 @@ class ApiClient
         }
 
         return $buttons[$title];
+    }
+
+    private function fetchCaptchaSid(string $captcha): ?string
+    {
+        if ($captcha && strpos($captcha, 'sid=') !== false) {
+            $query = [];
+            parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
+            $sid = $query['sid'];
+
+            return $sid;
+        }
+
+        return null;
     }
 
 }

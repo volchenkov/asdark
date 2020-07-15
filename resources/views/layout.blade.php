@@ -60,6 +60,7 @@
             </ul>
         </div>
         <div class="col pt-5 offset-2">
+            @include('toasts')
             @yield('content')
         </div>
     </div>

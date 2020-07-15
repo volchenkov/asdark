@@ -36,7 +36,7 @@ class ExportsController extends BaseController
 
         $headers = [];
         if (in_array($export->status, [Export::STATUS_PENDING, Export::STATUS_PROCESSING])) {
-            $headers = ['Refresh' => 5];
+            $headers = ['Refresh' => 10];
         }
 
         return response()->view('export', $data, 200, $headers);
@@ -66,12 +66,9 @@ class ExportsController extends BaseController
         }
         $export->saveOrFail();
 
-        return redirect()->action('ExportsController@started');
-    }
+        $request->session()->flash('msg', "Загрузка запланирована, номер #{$export->id}");
 
-    public function started()
-    {
-        return view('exports-started');
+        return redirect()->action('ExportsController@item', ['export_id' => $export->id]);
     }
 
 }

@@ -33,7 +33,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/exports_confirm', 'ExportsController@confirm');
     Route::post('/exports_start', 'ExportsController@start');
-    Route::get('/exports_started', 'ExportsController@started');
     Route::get('/exports_cancel', 'ExportsController@cancel');
     Route::get('/exports_captcha', 'ExportsController@captcha');
     Route::get('/exports', 'ExportsController@list');

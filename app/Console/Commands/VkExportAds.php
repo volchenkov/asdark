@@ -124,7 +124,11 @@ class VkExportAds extends Command
     private function executePlan(Export $export): void
     {
         /** @var Collection $operations */
-        $operations = ExportOperation::where('export_id', $export->id)->where('status', 'pending')->get();
+        $operations = ExportOperation::where('export_id', $export->id)
+            ->where('status', 'pending')
+            ->orderBy('ad_id', 'ASC')
+            ->get();
+
         if ($operations->count() == 0) {
             $this->log($export->id, "Нет изменений для загрузки", ExportLog::LEVEL_NOTICE);
             return;

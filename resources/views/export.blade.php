@@ -83,13 +83,8 @@
 <div class="row mb-4">
     <div class="col-12">
         @if($export->operations->count() > 0)
-            <div class="border p-2 my-2">
-                <span>Запланировано <strong>{{ $export->operations->count() }}</strong> операций: </span>
-                @foreach($export->operations->groupBy('status') as $status => $chunk)
-                    <span class="ml-2 text-{{ $operationStatuses[$status]['color'] }}">
-                        {{ $operationStatuses[$status]['title'] }} <strong>{{ $chunk->count() }}</strong>
-                    </span>
-                @endforeach
+            <div class="my-2">
+                <a href="/exports_operations?export_id={{ $export->id }}">Операций: {{ $export->operations->count() }}</a>
             </div>
         @endif
 

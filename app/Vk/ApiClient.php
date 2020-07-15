@@ -225,7 +225,7 @@ class ApiClient
         }
 
         foreach ($rsp['ads'] as $r) {
-            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['id'] && $o->type == 'update_ad');
+            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['id'] && $o->type == ExportOperation::TYPE_UPDATE_AD);
             $failed = isset($r['error_desc']);
 
             $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
@@ -233,7 +233,7 @@ class ApiClient
         }
 
         foreach ($rsp['posts'] as $r) {
-            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['adId'] && $o->type == 'update_post');
+            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['adId'] && $o->type == ExportOperation::TYPE_UPDATE_POST);
             $failed = !isset($r['ok']) || $r['ok'] != 1;
 
             $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
@@ -248,7 +248,7 @@ class ApiClient
         $code = "var a = '{$this->getConnection()->data['account_id']}';\n";
         $code .= "var result = {'ads': [], 'posts': []};\n";
 
-        $adsUpdates = $operations->where('type', 'update_ad')->all();
+        $adsUpdates = $operations->where('type', ExportOperation::TYPE_UPDATE_AD)->all();
         if ($adsUpdates) {
             $adsData = [];
             foreach ($adsUpdates as $operation) {
@@ -258,7 +258,7 @@ class ApiClient
             $code .= "result.ads = API.ads.updateAds({'data': '{$encoded}', 'account_id': a});\n";
         }
 
-        $postUpdates = $operations->where('type', 'update_post')->all();
+        $postUpdates = $operations->where('type', ExportOperation::TYPE_UPDATE_POST)->all();
         foreach ($postUpdates as $operation) {
             $data = json_encode($this->getPostFields($operation), JSON_UNESCAPED_UNICODE);
             $code .= "result.posts.push({'ok': API.wall.editAdsStealth({$data}), 'adId': '{$operation->ad_id}'});\n";

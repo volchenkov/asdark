@@ -13,6 +13,9 @@ class ExportOperation extends Model
     const STATUS_PROCESSING = 'processing';
     const STATUS_PENDING = 'pending';
 
+    const TYPE_UPDATE_AD = 'update_ad';
+    const TYPE_UPDATE_POST = 'update_post';
+
     protected $fillable = [
         'type',
         'ad_id',

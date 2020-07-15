@@ -63,7 +63,7 @@ class ExportPlanner
             }
             if ($newAdState) {
                 $operations[] = [
-                    'type'       => 'update_ad',
+                    'type'       => ExportOperation::TYPE_UPDATE_AD,
                     'ad_id'      => $adId,
                     'export_id'  => $this->exportId,
                     'state_from' => $currentAd,
@@ -88,7 +88,7 @@ class ExportPlanner
             }
             if ($newPostState) {
                 $operations[] = [
-                    'type'       => 'update_post',
+                    'type'       => ExportOperation::TYPE_UPDATE_POST,
                     'ad_id'      => $adId,
                     'export_id'  => $this->exportId,
                     'state_from' => $currentAd,

@@ -26,6 +26,11 @@ class ExportsController extends BaseController
         return view('exports-confirm', ['spreadsheetId' => $request->input('sid')]);
     }
 
+    public function operations(Request $request)
+    {
+        return view('exports-operations', ['export' => Export::findOrFail($request->input('export_id'))]);
+    }
+
     public function item(Request $request)
     {
         $export = Export::with('user')->findOrFail($request->input('export_id'));

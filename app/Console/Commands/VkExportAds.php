@@ -4,11 +4,14 @@ namespace App\Console\Commands;
 
 use App\Export;
 use App\ExportLog;
+use App\ExportOperation;
+use App\ExportPlanner;
 use App\Vk\CaptchaException;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
 use \App\Vk\AdsFeed;
 use \App\Google\ApiClient as GoogleApiClient;
+use Illuminate\Support\Collection;
 
 class VkExportAds extends Command
 {
@@ -55,16 +58,27 @@ class VkExportAds extends Command
             $export->status = Export::STATUS_PROCESSING;
             $export->save();
 
-            $fails = $this->exportAds($export);
-            if (is_null($fails)) {
-                $status = Export::STATUS_INTERRUPTED;
-            } elseif ($fails > 0) {
-                $status = Export::STATUS_PARTIAL_FAILURE;
-            } else {
-                $status = Export::STATUS_DONE;
-            }
-            $failure = null;
+            $this->log($export->id, 'Загрузка началась');
+            $feed = $this->getFeed($export->sid);
 
+            $status = Export::STATUS_DONE;
+            $failure = null;
+            if (count($feed) > 0) {
+                $planner = new ExportPlanner($this->vk, $export->id);
+                $planner->plan($feed);
+
+                $this->executePlan($export->id);
+
+                $fails = ExportOperation::where('export_id', $export->id)
+                    ->where('status', 'failed')
+                    ->get()
+                    ->count();
+                if ($fails > 0) {
+                    $status = Export::STATUS_PARTIAL_FAILURE;
+                }
+            } else {
+                $this->log($export->id, 'Файл загрузки пуст');
+            }
             $this->log($export->id, 'Загрузка завершилась');
         } catch (\Throwable $e) {
             $this->log($export->id, "Обновление прервано из-за ошибки: {$e->getMessage()}", ExportLog::LEVEL_ERROR);
@@ -77,140 +91,62 @@ class VkExportAds extends Command
 
             $export->save();
         }
-
-        return;
     }
 
-    private function exportAds(Export $export): ?int
+    private function getFeed($spreadsheetId)
     {
-        $this->log($export->id, 'Загрузка началась');
-        $remoteFeed = $this->google->getCells($export->sid, self::FEED_SHEET_TITLE);
+        $feed = $this->google->getCells($spreadsheetId, self::FEED_SHEET_TITLE);
 
-        if (count($remoteFeed) == 0) {
-            $this->log($export->id, 'Файл загрузки пуст');
-            return 0;
+        if (count($feed) == 0) {
+            return [];
         }
 
-        $headers = array_keys($remoteFeed[0]);
+        $headers = array_keys($feed[0]);
         if (!in_array(AdsFeed::COL_AD_ID, $headers)) {
             throw new \RuntimeException(sprintf("Feed column '%s' required for ads update", AdsFeed::COL_AD_ID));
         }
-        if (in_array(AdsFeed::COL_CLIENT_ID, $headers)) {
-            $this->vk->setClientId($remoteFeed[0][AdsFeed::COL_CLIENT_ID]);
-        }
 
-        $adkCols = [
-            AdsFeed::COL_ADK_STATUS,
-            AdsFeed::COL_ADK_ERR,
-            AdsFeed::COL_ADK_CAPTCHA,
-            AdsFeed::COL_ADK_CAPTCHA_CODE
-        ];
+        return $feed;
+    }
 
-        $feed = [];
-        foreach ($remoteFeed as $row) {
-            foreach ($adkCols as $col) {
-                $row[$col] = $row[$col] ?? null;
-            }
-            $feed[$row[AdsFeed::COL_AD_ID]] = $row;
-        }
+    private function executePlan(int $exportId)
+    {
+        /** @var Collection $operations */
+        $operations = ExportOperation::where('export_id', $exportId)->where('status', 'pending')->get();
 
-        $incompleteAds = array_filter($feed, fn ($i) => $i[AdsFeed::COL_ADK_STATUS] !== 'done');
-        if (count($incompleteAds) === 0) {
-            $this->log($export->id, 'Нет объявлений для обновления');
-
-            return 0;
-        }
-
-        $currentStateFeed = $this->vk->getFeed(array_keys($incompleteAds), array_keys(AdsFeed::FIELDS));
-
-        $fails = 0;
-        $remaining = count($incompleteAds);
-        foreach (array_chunk($incompleteAds, 5, true) as $chunk) {
-            $this->log($export->id, "Обновляются объявления ".implode(', ', array_column($chunk, AdsFeed::COL_AD_ID)));
+        $remaining = $operations->count();
+        // обновляем по 5 за раз из-за ограничений API
+        // см https://vk.com/dev/ads.updateAds
+        /** @var Collection $chunk */
+        foreach ($operations->groupBy('ad_id')->chunk(5) as $chunk) {
+            $chunk = $chunk->collapse();
+            $this->log($exportId, "Обновляются объявления ".implode(', ', $chunk->pluck('ad_id')->all()));
             try {
-                $errors = $this->vk->updateAds($chunk, $currentStateFeed);
-
-                foreach ($errors as $adId => $error) {
-                    $adResult = [
-                        AdsFeed::COL_ADK_STATUS       => 'done',
-                        AdsFeed::COL_ADK_ERR          => '',
-                        AdsFeed::COL_ADK_CAPTCHA      => '',
-                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
-                    ];
-                    if (!is_null($error)) {
-                        $fails++;
-                        $adResult = [
-                            AdsFeed::COL_ADK_STATUS => 'failed',
-                            AdsFeed::COL_ADK_ERR    => $error,
-                        ];
-                    }
-                    $feed[$adId] = array_replace($feed[$adId], $adResult);
+                foreach ($chunk as $operation) {
+                    $operation->status = ExportOperation::STATUS_PROCESSING;
+                    $operation->save();
+                }
+                $this->vk->batchUpdate($chunk);
+                foreach ($chunk as $operation) {
+                    $operation->save();
                 }
 
-                $remaining -= count($chunk);
+                $remaining -= $chunk->count();
                 if ($remaining) {
                     $sleep = random_int(60, 80);
-                    $this->log($export->id, "Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
+                    $this->log($exportId, "Осталость {$remaining} объявлений. Ждем {$sleep} секунд из-за капчи.");
                     sleep($sleep);
                 }
-            } catch (CaptchaException $e) {
-                $this->log($export->id, 'Выполнение прервано из-за капчи', ExportLog::LEVEL_WARNING);
-                foreach ($chunk as $adId => $_) {
-                    $feed[$adId] = array_replace($feed[$adId], [
-                        AdsFeed::COL_ADK_STATUS       => 'failed',
-                        AdsFeed::COL_ADK_ERR          => "Для продолжения нужна капча",
-                        AdsFeed::COL_ADK_CAPTCHA      => $e->img,
-                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
-                    ]);
-
-                    /** @TODO refactor this: хотфикс для заполнения фида, в случае капчи */
-                    try {
-                        $feed = array_values($feed);
-                        $headers = array_keys($feed[0]);
-                        $this->google->writeCells($export->sid, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
-
-                        $A1 = GoogleApiClient::getA1Cols($headers);
-
-                        $result = [];
-                        foreach ($feed as $row) {
-                            $result[] = array_intersect_key($row, array_fill_keys($adkCols, null));
-                        }
-                        $range = self::FEED_SHEET_TITLE . '!' . "{$A1[$adkCols[0]]}2:{$A1[$adkCols[count($adkCols) - 1]]}" . (1 + count($result));
-                        $this->google->writeCells($export->sid, $range, $result);
-                    } catch (\Exception $e) {
-                        $this->log($export->id, 'Не удалось обновить Google таблицу результатами загрузки.', ExportLog::LEVEL_ERROR);
-                    }
-
-                    return null;
-                }
             } catch (\Exception $e) {
-                $this->log($export->id, 'Во время обновления произошла ошибка', ExportLog::LEVEL_WARNING);
-                foreach ($chunk as $adId => $_) {
-                    $fails++;
-                    $feed[$adId] = array_replace($feed[$adId], [
-                        AdsFeed::COL_ADK_STATUS       => 'failed',
-                        AdsFeed::COL_ADK_ERR          => "Не удалось обновить объявление: {$e->getMessage()}",
-                        AdsFeed::COL_ADK_CAPTCHA      => '',
-                        AdsFeed::COL_ADK_CAPTCHA_CODE => ''
-                    ]);
+                foreach ($chunk as $operation) {
+                    $operation->status = ExportOperation::STATUS_ABORTED;
+                    $operation->error = $e->getMessage();
+                    $operation->save();
                 }
+
+                throw $e;
             }
         }
-        $feed = array_values($feed);
-
-        $headers = array_keys($feed[0]);
-        $this->google->writeCells($export->sid, self::FEED_SHEET_TITLE . '!1:1', [$headers]);
-
-        $A1 = GoogleApiClient::getA1Cols($headers);
-
-        $result = [];
-        foreach ($feed as $row) {
-            $result[] = array_intersect_key($row, array_fill_keys($adkCols, null));
-        }
-        $range = self::FEED_SHEET_TITLE . '!' . "{$A1[$adkCols[0]]}2:{$A1[$adkCols[count($adkCols) - 1]]}" . (1 + count($result));
-        $this->google->writeCells($export->sid, $range, $result);
-
-        return $fails;
     }
 
     private function log(int $exportId, string $message, string $level = ExportLog::LEVEL_INFO)

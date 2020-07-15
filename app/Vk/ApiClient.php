@@ -3,8 +3,9 @@
 namespace App\Vk;
 
 use App\Connection;
+use App\ExportOperation;
 use \GuzzleHttp\Client;
-use Monolog\Logger;
+use Illuminate\Support\Collection;
 
 /**
  *
@@ -200,177 +201,65 @@ class ApiClient
         return $rows;
     }
 
-    /**
-     * @param array $feed
-     * @param $currentState
-     * @return array
-     * @throws CaptchaException
-     */
-    public function updateAds(array $feed, $currentState): array
+    public function batchUpdate(Collection $operations, $captcha = null, $captchaCode = null): Collection
     {
-        $commands = $this->getUpdateCommands($feed, $currentState);
+        $params = ['code' => $this->formatCode($operations)];
 
-        $adIds = array_keys($feed);
-        $errors = array_fill_keys($adIds, null);
-        if (!$commands) {
-            return $errors;
+        if ($captcha && $captchaCode) {
+            $params = array_replace($params, [
+                'captcha_sid' => $captcha,
+                'captcha_key' => $captchaCode
+            ]);
         }
-        $params = ['code' => $this->formatCode($commands)];
 
-        foreach ($adIds as $adId) {
-            $captcha = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA];
-            if ($captcha && strpos($captcha, 'sid=') !== false) {
-                $query = [];
-                parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
-                $sid = $query['sid'];
-
-                if ($code = $feed[$adId][AdsFeed::COL_ADK_CAPTCHA_CODE]) {
-                    $params = array_replace($params, [
-                        'captcha_sid' => $sid,
-                        'captcha_key' => $code
-                    ]);
-                }
-            }
-        }
         $rsp = $this->post('execute', $params);
-
         if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
             throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
         }
 
-        $errors = array_fill_keys($adIds, null);
         foreach ($rsp['ads'] as $r) {
-            if (isset($r['error_desc'])) {
-                $errors[$r['id']] = "Не удалось обновить объявление: {$r['error_code']} {$r['error_desc']}. ";
-            }
+            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['id'] && $o->type == 'update_ad');
+            $failed = isset($r['error_desc']);
+
+            $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
+            $op->error = $failed ? json_encode($r) : null;
         }
 
         foreach ($rsp['posts'] as $r) {
-            if (!isset($r['ok']) || $r['ok'] != 1) {
-                $errors[$r['adId']] = ($errors[$r['adId']] ?? '') . "Не удалось обновить пост. ";
-            }
+            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['adId'] && $o->type == 'update_post');
+            $failed = !isset($r['ok']) || $r['ok'] != 1;
+
+            $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
+            $op->error = $failed ? 'Не удалось обновить пост': null;
         }
 
-        return $errors;
+        return $operations;
     }
 
-    private function formatCode(array $commands): string
+    private function formatCode(Collection $operations): string
     {
-        $forType = fn ($type) => fn ($command) => $command['type'] == $type;
-
         $code = "var a = '{$this->getConnection()->data['account_id']}';\n";
         $code .= "var result = {'ads': [], 'posts': []};\n";
 
-        $adsUpdates = array_filter($commands, $forType('updateAd'));
-        foreach (array_chunk($adsUpdates, 5) as $updates) {
-            $data = json_encode(array_column($updates, 'item'), JSON_UNESCAPED_UNICODE);
-            $code .= "result.ads = API.ads.updateAds({'data': '{$data}', 'account_id': a});\n";
+        $adsUpdates = $operations->where('type', 'update_ad')->all();
+        if ($adsUpdates) {
+            $adsData = [];
+            foreach ($adsUpdates as $operation) {
+                $adsData[] = $this->getAdFields($operation);
+            }
+            $encoded = json_encode($adsData, JSON_UNESCAPED_UNICODE);
+            $code .= "result.ads = API.ads.updateAds({'data': '{$encoded}', 'account_id': a});\n";
         }
 
-        $postUpdates = array_filter($commands, $forType('updatePost'));
-        foreach ($postUpdates as $update) {
-            $data = json_encode($update['item'], JSON_UNESCAPED_UNICODE);
-            $code .= "result.posts.push({'ok': API.wall.editAdsStealth({$data}), 'adId': '{$update['adId']}'});\n";
+        $postUpdates = $operations->where('type', 'update_post')->all();
+        foreach ($postUpdates as $operation) {
+            $data = json_encode($this->getPostFields($operation), JSON_UNESCAPED_UNICODE);
+            $code .= "result.posts.push({'ok': API.wall.editAdsStealth({$data}), 'adId': '{$operation->ad_id}'});\n";
         }
 
         $code .= 'return result;';
 
         return $code;
-    }
-
-    private function getUpdateCommands(array $feed, array $currentState): array
-    {
-        $commands = [];
-        foreach ($feed as $ad) {
-            $adId = $ad[AdsFeed::COL_AD_ID];
-            $currentAd = $currentState[$adId];
-
-            $needUpdate = function ($field) use ($ad, $currentAd) {
-                return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
-            };
-
-            // поля объявления, которые нужно обновить
-            $u = [];
-            if ($needUpdate(AdsFeed::COL_AD_NAME)) {
-                $u['name'] = $ad[AdsFeed::COL_AD_NAME];
-            }
-            if ($needUpdate(AdsFeed::COL_AD_LINK_URL)) {
-                $u['link_url'] = $ad[AdsFeed::COL_AD_LINK_URL];
-            }
-            if ($needUpdate(AdsFeed::COL_AD_TITLE)) {
-                $u['title'] = $ad[AdsFeed::COL_AD_TITLE];
-            }
-            if ($needUpdate(AdsFeed::COL_AD_DESCRIPTION)) {
-                $u['description'] = $ad[AdsFeed::COL_AD_DESCRIPTION];
-            }
-            if ($needUpdate(AdsFeed::COL_AD_LINK_TITLE)) {
-                $u['link_title'] = $ad[AdsFeed::COL_AD_LINK_TITLE];
-            }
-            if ($u) {
-                $commands[] = [
-                    'type' => 'updateAd',
-                    'item' => array_replace(['ad_id' => $adId], $u)
-                ];
-            }
-
-            // поля поста, которые нужно обновить
-            $p = [];
-            if ($needUpdate(AdsFeed::COL_POST_TEXT)) {
-                $p['message'] = $ad[AdsFeed::COL_POST_TEXT];
-            }
-            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_URL)) {
-                $p['attachments'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
-            }
-            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE)) {
-                $p['link_title'] = $ad[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
-            }
-            if ($needUpdate(AdsFeed::COL_POST_LINK_IMAGE)) {
-                $p['link_image'] = $ad[AdsFeed::COL_POST_LINK_IMAGE];
-            }
-            if ($needUpdate(AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID)) {
-                $p['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$ad[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
-            }
-
-            if ($p) {
-                $fields = [
-                    'owner_id' => $currentAd[AdsFeed::COL_POST_OWNER_ID],
-                    'post_id'  => $currentAd[AdsFeed::COL_POST_ID]
-                ];
-                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]) {
-                    $fields['link_video'] = "{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
-                }
-                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE]) {
-                    $fields['link_title'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
-                }
-                // В ВК разделены понятия типа кнопки и текста кнопки, однако при загрузке
-                // принимается лишь один параметр link_button - строковая константа из списка,
-                // по которой, в совокупности с тем, куда ведет ссылка кнопки, будет определ и текст и тип.
-                // Т.к. из API возвращается и тип и текст, а для обратной загрузки доступна только одна константа
-                // - определяем ее по тексту и месту назначения ссылки
-                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE]) {
-                    $fields['link_button'] = $this->getLinkButtonByTitle(
-                        $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE],
-                        $p['attachments'] ?? $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]
-                    );
-                }
-                if ($currentAd[AdsFeed::COL_POST_LINK_IMAGE]) {
-                    $fields['link_image'] = $currentAd[AdsFeed::COL_POST_LINK_IMAGE];
-                }
-                if ($currentAd[AdsFeed::COL_POST_TEXT]) {
-                    $fields['message'] = $currentAd[AdsFeed::COL_POST_TEXT];
-                }
-                if ($currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]) {
-                    $fields['attachments'] = $currentAd[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
-                }
-                $commands[] = [
-                    'type' => 'updatePost',
-                    'adId' => $adId,
-                    'item' => array_replace($fields, $p),
-                ];
-            }
-        }
-
-        return $commands;
     }
 
     /**
@@ -472,6 +361,94 @@ class ApiClient
         return $sizes[0]['url'] ?? null;
     }
 
+    private function getAdFields(ExportOperation $operation): array
+    {
+        $ad = [
+            'ad_id' => $operation->ad_id
+        ];
+
+        $newAd = $operation->state_to;
+        if (isset($newAd[AdsFeed::COL_AD_NAME])) {
+            $ad['name'] = $newAd[AdsFeed::COL_AD_NAME];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_LINK_URL])) {
+            $ad['link_url'] = $newAd[AdsFeed::COL_AD_LINK_URL];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_TITLE])) {
+            $ad['title'] = $newAd[AdsFeed::COL_AD_TITLE];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_DESCRIPTION])) {
+            $ad['description'] = $newAd[AdsFeed::COL_AD_DESCRIPTION];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_LINK_TITLE])) {
+            $ad['link_title'] = $newAd[AdsFeed::COL_AD_LINK_TITLE];
+        }
+
+        return $ad;
+    }
+
+    private function getPostFields(ExportOperation $operation): array
+    {
+        $new = $operation->state_to;
+        $current = $operation->state_from;
+        $post = [
+            'owner_id' => $current[AdsFeed::COL_POST_OWNER_ID],
+            'post_id'  => $current[AdsFeed::COL_POST_ID]
+        ];
+
+        if ($current[AdsFeed::COL_POST_TEXT]) {
+            $post['message'] = $current[AdsFeed::COL_POST_TEXT];
+        }
+        if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]) {
+            $post['attachments'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+        }
+        if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE]) {
+            $post['link_title'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
+        }
+        if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]) {
+            $post['link_video'] = "{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+        }
+
+        // В ВК разделены понятия типа кнопки и текста кнопки, однако при загрузке
+        // принимается лишь один параметр link_button - строковая константа из списка,
+        // по которой, в совокупности с тем, куда ведет ссылка кнопки, будет определ и текст и тип.
+        // Т.к. из API возвращается и тип и текст, а для обратной загрузки доступна только одна константа
+        // - определяем ее по тексту и месту назначения ссылки
+        if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE]) {
+            $post['link_button'] = $this->getLinkButtonByTitle(
+                $current[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE],
+                $current[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]
+            );
+        }
+        if ($current[AdsFeed::COL_POST_LINK_IMAGE]) {
+            $post['link_image'] = $current[AdsFeed::COL_POST_LINK_IMAGE];
+        }
+
+        if (isset($new[AdsFeed::COL_POST_TEXT])) {
+            $post['message'] = $new[AdsFeed::COL_POST_TEXT];
+        }
+        if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_URL])) {
+            $post['attachments'] = $new[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
+        }
+        if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE])) {
+            $post['link_title'] = $new[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
+        }
+        if (isset($new[AdsFeed::COL_POST_LINK_IMAGE])) {
+            $post['link_image'] = $new[AdsFeed::COL_POST_LINK_IMAGE];
+        }
+        if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID])) {
+            $post['link_video'] = "{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+        }
+        if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE])) {
+            $post['link_button'] = $this->getLinkButtonByTitle(
+                $current[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE],
+                $new[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]
+            );
+        }
+
+        return $post;
+    }
+
     /*
      * Преобразование возвращенного из API заголовка кнопки в соответственное значение, пригодное для обратной загрузки
      * @see https://vk.com/dev/wall.postAdsStealth
@@ -531,4 +508,5 @@ class ApiClient
 
         return $buttons[$title];
     }
+
 }

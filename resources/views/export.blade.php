@@ -1,7 +1,6 @@
 @extends('layout')
 
 @section('content')
-
 @php
     $statuses = [
         'pending'          => ['color' => 'info', 'title' => 'Ожидает'],
@@ -11,14 +10,6 @@
         'failed'           => ['color' => 'danger', 'title' => 'Провалена'],
         'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча'],
         'canceled'         => ['color' => 'muted', 'title' => 'Отменена']
-    ];
-
-    $operationStatuses = [
-        \App\ExportOperation::STATUS_DONE       => ['title' => 'Готова', 'color' => 'success'],
-        \App\ExportOperation::STATUS_PENDING    => ['title' => 'В ожидании', 'color' => 'info'],
-        \App\ExportOperation::STATUS_FAILED     => ['title' => 'Ошибка', 'color' => 'danger'],
-        \App\ExportOperation::STATUS_ABORTED    => ['title' => 'Прекращена', 'color' => 'warning'],
-        \App\ExportOperation::STATUS_PROCESSING => ['title' => 'В работе', 'color' => 'info'],
     ];
 @endphp
 <div class="row mb-2">
@@ -59,7 +50,7 @@
 </div>
 
 @if($export['status'] !== \App\Export::STATUS_PROCESSING)
-    <div class="row mb-2">
+    <div class="row mb-3">
         <div class="col-12">
             @if($export['status'] == \App\Export::STATUS_INTERRUPTED)
                 <a href="exports_captcha?export_id={{ $export['id'] }}" class="btn btn-success btn-sm mr-1" role="button">ввести капчу</a>
@@ -80,32 +71,6 @@
     </div>
 @endif
 
-<div class="row mb-4">
-    <div class="col-12">
-        <hr/>
-        @if($export->operations->count() > 0)
-            <div class="my-2">
-                <a href="/exports_operations?export_id={{ $export->id }}">Операций: {{ $export->operations->count() }}</a>
-            </div>
-        @endif
-
-        @php
-            $logColors = [
-                \App\ExportLog::LEVEL_ERROR   => 'danger',
-                \App\ExportLog::LEVEL_WARNING => 'warning',
-                \App\ExportLog::LEVEL_NOTICE  => 'dark',
-                \App\ExportLog::LEVEL_INFO    => 'secondary',
-            ];
-        @endphp
-        @foreach($logs->sortBy('id') as $log)
-            <div>
-                <span class="text-black-50 small">{{ $log->created_at }}</span>
-                <span class="text-{{ $logColors[$log->level] }}"> {{ $log->message }} </span>
-            </div>
-        @endforeach
-    </div>
-</div>
-
 @if($export['status'] == 'failed')
     <div class="row mb-2">
         <div class="col-12 alert alert-warning">
@@ -115,14 +80,26 @@
     </div>
 @endif
 
-@if(in_array($export['status'], [\App\Export::STATUS_PROCESSING]))
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <div class="spinner-border text-secondary" role="status">
-                <span class="sr-only">Загрузка...</span>
-            </div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <ul class="nav nav-tabs">
+            @if($export->logs->count() > 0)
+                <li class="nav-item">
+                    <a class="nav-link{{ request()->routeIs('export.logs') ? ' active' : '' }}" href="{{ route('export.logs', ['export_id' => $export->id]) }}">Логи</a>
+                </li>
+            @endif
+
+            @if($export->operations->count() > 0)
+                <li class="nav-item">
+                    <a class="nav-link{{ request()->routeIs('export.operations') ? ' active' : '' }}" href="{{ route('export.operations', ['export_id' => $export->id]) }}">План - {{ $export->operations->count() }} операций</a>
+                </li>
+            @endif
+        </ul>
+
+        <div class="my-2">
+            @yield('export-tab')
         </div>
     </div>
-@endif
-
+</div>
 @endsection

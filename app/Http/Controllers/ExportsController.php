@@ -28,23 +28,19 @@ class ExportsController extends BaseController
 
     public function operations(Request $request)
     {
-        return view('exports-operations', ['export' => Export::findOrFail($request->input('export_id'))]);
+        return view('export-operations', ['export' => Export::findOrFail($request->input('export_id'))]);
     }
 
     public function item(Request $request)
     {
         $export = Export::with('user')->findOrFail($request->input('export_id'));
-        $data = [
-            'export' => $export,
-            'logs'   => ExportLog::where('export_id', $export->id)->get()
-        ];
 
         $headers = [];
         if (in_array($export->status, [Export::STATUS_PENDING, Export::STATUS_PROCESSING])) {
             $headers = ['Refresh' => 10];
         }
 
-        return response()->view('export', $data, 200, $headers);
+        return response()->view('export-logs', ['export' => $export], 200, $headers);
     }
 
     public function cancel(Request $request)

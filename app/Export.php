@@ -31,4 +31,9 @@ class Export extends Model
         return $this->hasMany(ExportOperation::class);
     }
 
+    public function logs()
+    {
+        return $this->hasMany(ExportLog::class);
+    }
+
 }

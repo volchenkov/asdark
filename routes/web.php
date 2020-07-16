@@ -35,9 +35,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/exports_start', 'ExportsController@start');
     Route::get('/exports_cancel', 'ExportsController@cancel');
     Route::get('/exports_captcha', 'ExportsController@captcha');
-    Route::get('/exports_operations', 'ExportsController@operations');
     Route::get('/exports', 'ExportsController@list');
-    Route::get('/export', 'ExportsController@item');
+    Route::get('/export', 'ExportsController@item')->name('export.logs');
+    Route::get('/exports_operations', 'ExportsController@operations')->name('export.operations');
 
     Route::get('/help', 'HelpController@index');
 

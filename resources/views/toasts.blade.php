@@ -4,7 +4,7 @@
          aria-live="assertive"
          aria-atomic="true"
          data-autohide="true"
-         data-delay="7000"
+         data-delay="5000"
          style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
         <div class="toast-header bg-success text-light">
             <strong class="mr-auto">Успешно</strong>

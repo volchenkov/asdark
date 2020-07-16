@@ -212,7 +212,8 @@ class ApiClient
     {
         $params = ['code' => $this->formatCode($operations)];
 
-        if ($captcha && $captchaSid = $this->fetchCaptchaSid($captcha) && $captchaCode) {
+        if ($captcha && $captchaCode) {
+            $captchaSid = $this->fetchCaptchaSid($captcha);
             $params = array_replace($params, [
                 'captcha_sid' => $captchaSid,
                 'captcha_key' => $captchaCode
@@ -521,9 +522,8 @@ class ApiClient
         if ($captcha && strpos($captcha, 'sid=') !== false) {
             $query = [];
             parse_str(parse_url($captcha, PHP_URL_QUERY), $query);
-            $sid = $query['sid'];
 
-            return $sid;
+            return $query['sid'];
         }
 
         return null;

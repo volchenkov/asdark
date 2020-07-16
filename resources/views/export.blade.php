@@ -59,7 +59,7 @@
 </div>
 
 @if($export['status'] !== \App\Export::STATUS_PROCESSING)
-    <div class="row mb-4">
+    <div class="row mb-2">
         <div class="col-12">
             @if($export['status'] == \App\Export::STATUS_INTERRUPTED)
                 <a href="exports_captcha?export_id={{ $export['id'] }}" class="btn btn-success btn-sm mr-1" role="button">ввести капчу</a>
@@ -82,6 +82,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
+        <hr/>
         @if($export->operations->count() > 0)
             <div class="my-2">
                 <a href="/exports_operations?export_id={{ $export->id }}">Операций: {{ $export->operations->count() }}</a>

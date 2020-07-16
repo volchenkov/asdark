@@ -29,7 +29,7 @@
     <div class="row">
         <div class="col-2 form-group">
             <input class="btn btn-primary"
-                   value="Повторить загрузку"
+                   value="повторить загрузку"
                    type="submit"/>
         </div>
     </div>

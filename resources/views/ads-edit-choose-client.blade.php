@@ -19,7 +19,7 @@
     </div>
     <div class="row mb-5">
         <div class="col-12">
-            <input class="btn btn-primary" type="submit" />
+            <input class="btn btn-primary" type="submit" value="Далее"/>
         </div>
     </div>
 </form>

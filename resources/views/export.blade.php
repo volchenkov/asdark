@@ -86,13 +86,15 @@
         <ul class="nav nav-tabs">
             @if($export->logs->count() > 0)
                 <li class="nav-item">
-                    <a class="nav-link{{ request()->routeIs('export.logs') ? ' active' : '' }}" href="{{ route('export.logs', ['export_id' => $export->id]) }}">Логи</a>
+                    <a class="nav-link{{ request()->routeIs('export.logs') ? ' active' : '' }}"
+                       href="{{ route('export.logs', ['export_id' => $export->id]) }}">Логи</a>
                 </li>
             @endif
 
             @if($export->operations->count() > 0)
                 <li class="nav-item">
-                    <a class="nav-link{{ request()->routeIs('export.operations') ? ' active' : '' }}" href="{{ route('export.operations', ['export_id' => $export->id]) }}">План - {{ $export->operations->count() }} операций</a>
+                    <a class="nav-link{{ request()->routeIs('export.operations') ? ' active' : '' }}"
+                       href="{{ route('export.operations', ['export_id' => $export->id]) }}">Операции [ {{ $export->operations->where('status', \App\ExportOperation::STATUS_DONE)->count() }}  / {{ $export->operations->count() }} ]</a>
                 </li>
             @endif
         </ul>

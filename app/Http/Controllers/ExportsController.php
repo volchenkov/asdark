@@ -12,7 +12,12 @@ class ExportsController extends BaseController
 
     public function list()
     {
-        return view('exports-list', ['exports' => Export::with('user')->get()->sortByDEsc('id')]);
+        $exports = Export::with('user')
+            ->orderByDesc('id')
+            ->limit(51)
+            ->get();
+
+        return view('exports-list', ['exports' => $exports]);
     }
 
     public function captcha(Request $request)

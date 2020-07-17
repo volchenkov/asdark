@@ -47,9 +47,14 @@
                 </td>
             </tr>
             @endforeach
-
             </tbody>
         </table>
+
+        @if($exports->count() > 50)
+            <p class="text-center text-muted small">
+                Представлены последние 50 загрузок<br/> Архив доступен по запросу
+            </p>
+        @endif
     </div>
 </div>
 @endsection

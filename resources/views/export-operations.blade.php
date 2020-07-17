@@ -4,10 +4,10 @@
 
 @php
     $statuses = [
-        \App\ExportOperation::STATUS_PENDING    => ['title' => 'в ожидании', 'color' => 'muted', 'icon' => '&#8987;'],
-        \App\ExportOperation::STATUS_PROCESSING => ['title' => 'в работе', 'color' => 'info', 'icon' => '&#9203;'],
+        \App\ExportOperation::STATUS_PENDING    => ['title' => 'в ожидании', 'color' => 'muted', 'icon' => '&#128164;'],
+        \App\ExportOperation::STATUS_PROCESSING => ['title' => 'в работе', 'color' => 'default', 'icon' => '&#9203;'],
         \App\ExportOperation::STATUS_FAILED     => ['title' => 'ошибка', 'color' => 'danger', 'icon' => '&#10060;'],
-        \App\ExportOperation::STATUS_ABORTED    => ['title' => 'прекращена', 'color' => 'warning', 'icon' => '&#9888;'],
+        \App\ExportOperation::STATUS_ABORTED    => ['title' => 'прекращена', 'color' => 'default', 'icon' => '&#9888;'],
         \App\ExportOperation::STATUS_DONE       => ['title' => 'готова', 'color' => 'success', 'icon' => '&#10004;'],
     ];
     $types = [

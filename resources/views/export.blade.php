@@ -47,29 +47,27 @@
             {{ $export['captcha_code'] }}
         </div>
     @endif
-</div>
 
-@if($export['status'] !== \App\Export::STATUS_PROCESSING)
-    <div class="row mb-3">
-        <div class="col-12">
-            @if($export['status'] == \App\Export::STATUS_INTERRUPTED)
-                <a href="exports_captcha?export_id={{ $export['id'] }}" class="btn btn-success btn-sm mr-1" role="button">ввести капчу</a>
-            @else
-                @if(!in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                    <a href="/exports_confirm?sid={{ $export['sid'] }}" class="btn btn-primary btn-sm mr-1" role="button">
-                        повторить загрузку
-                    </a>
-                @endif
+    <div class="col-12">
+        @if(in_array($export['status'], [\App\Export::STATUS_FAILED, \App\Export::STATUS_PARTIAL_FAILURE]))
+            <a href="{{ route('export.rerun', ['id' => $export['id']]) }}" class="btn btn-primary btn-sm mr-1 mt-3" role="button">
+                повторить загрузку
+            </a>
+        @endif
 
-                @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
-                    <a href="/exports_cancel?id={{ $export['id'] }}" class="btn btn-secondary btn-sm mr-1" role="button">
-                        отменить загрузку
-                    </a>
-                @endif
-            @endif
-        </div>
+        @if(in_array($export['status'], [\App\Export::STATUS_INTERRUPTED]))
+            <a href="{{ route('export.captcha', ['export_id' => $export['id']]) }}" class="btn btn-success btn-sm mr-1 mt-3" role="button">
+                ввести капчу
+            </a>
+        @endif
+
+        @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
+            <a href="{{ route('export.cancel', ['id' => $export['id']]) }}" class="btn btn-secondary btn-sm mr-1 mt-3" role="button">
+                отменить загрузку
+            </a>
+        @endif
     </div>
-@endif
+</div>
 
 @if($export['status'] == 'failed')
     <div class="row mb-2">

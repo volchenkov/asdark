@@ -1,9 +1,8 @@
 @extends('layout')
 
 @section('content')
-<form action="/exports_start" method="POST">
+<form action="{{ route('export.rerun', ['id' => $export['id']]) }}" method="POST">
     @csrf
-    <input type="hidden" name="spreadsheetId" value="{{ $export['sid'] }}">
     <input type="hidden" name="captcha" value="{{ $export['captcha'] }}">
     <div class="row">
         <div class="col-12 form-group">
@@ -29,7 +28,7 @@
     <div class="row">
         <div class="col-2 form-group">
             <input class="btn btn-primary"
-                   value="повторить загрузку"
+                   value="продолжить загрузку"
                    type="submit"/>
         </div>
     </div>

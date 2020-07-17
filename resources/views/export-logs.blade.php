@@ -4,7 +4,7 @@
     @php
         $logColors = [
             \App\ExportLog::LEVEL_ERROR   => 'danger',
-            \App\ExportLog::LEVEL_WARNING => 'warning',
+            \App\ExportLog::LEVEL_WARNING => 'dark',
             \App\ExportLog::LEVEL_NOTICE  => 'dark',
             \App\ExportLog::LEVEL_INFO    => 'secondary',
         ];
@@ -18,7 +18,7 @@
     @endforeach
 
     @if(in_array($export['status'], [\App\Export::STATUS_PROCESSING]))
-        <div class="text-center" title="Автоматическое обновление каждые 10 секунд">
+        <div class="text-center my-3" title="Автоматическое обновление каждые 10 секунд">
             <div class="spinner-border text-secondary" role="status">
                 <span class="sr-only">Загрузка...</span>
             </div>

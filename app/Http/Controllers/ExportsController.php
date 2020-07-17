@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Export;
-use App\ExportLog;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
@@ -45,11 +44,28 @@ class ExportsController extends BaseController
 
     public function cancel(Request $request)
     {
-        $export = Export::find($request->input('id'));
+        $export = Export::findOrFail($request->input('id'));
         $export->status = Export::STATUS_CANCELED;
         $export->saveOrFail();
 
+        $request->session()->flash('msg', "Загрузка отменена");
+
         return redirect()->action('ExportsController@list');
+    }
+
+    public function rerun(Request $request)
+    {
+        $export = Export::findOrFail($request->input('id'));
+        $export->status = Export::STATUS_PENDING;
+        $export->captcha = $request->input('captcha', null);
+        $export->captcha_code = $request->input('captcha_code', null);
+        $export->failure = null;
+
+        $export->saveOrFail();
+
+        $request->session()->flash('msg', "Загрузка обновлена");
+
+        return redirect()->action('ExportsController@item', ['export_id' => $export->id]);
     }
 
     public function start(Request $request)
@@ -59,12 +75,6 @@ class ExportsController extends BaseController
         $export->status = Export::STATUS_PENDING;
         $export->user_id = Auth::user()->id;
 
-        if ($captcha = $request->input('captcha')) {
-            $export->captcha = $captcha;
-        }
-        if ($captchaCode = $request->input('captcha_code')) {
-            $export->captcha_code = $captchaCode;
-        }
         $export->saveOrFail();
 
         $request->session()->flash('msg', "Загрузка запланирована, номер #{$export->id}");

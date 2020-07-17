@@ -3,9 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Export;
-use App\ExportLog;
+use App\ExportLogger;
 use App\ExportOperation;
-use App\ExportPlanner;
 use App\Vk\CaptchaException;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
@@ -33,6 +32,7 @@ class VkExportAds extends Command
 
     private GoogleApiClient $google;
     private VkApiClient $vk;
+    private ExportLogger $logger;
 
     /**
      * Create a new command instance.
@@ -53,48 +53,64 @@ class VkExportAds extends Command
             $this->line('Nothing to do');
             return;
         }
+        $this->logger = new ExportLogger($export->id);
 
+        // после запуска хотим обнулить капчу в любом случае кроме новой капчи
+        $failure = $captcha = $captchaCode = null;
         try {
             $export->status = Export::STATUS_PROCESSING;
             $export->save();
 
-            $this->log($export->id, 'Загрузка началась');
+            $this->logger->info('Выполнение началось');
             $feed = $this->getFeed($export->sid);
 
             $status = Export::STATUS_DONE;
-            $failure = null;
-            if (count($feed) > 0) {
-                $this->log($export->id, 'Составляется план загрузки');
-                $planner = new ExportPlanner($this->vk, $export->id);
-                $planner->plan($feed);
-
-                $this->executePlan($export);
-
-                $fails = ExportOperation::where('export_id', $export->id)
-                    ->where('status', 'failed')
-                    ->get()
-                    ->count();
-                if ($fails > 0) {
-                    $status = Export::STATUS_PARTIAL_FAILURE;
-                }
+            if (count($feed) == 0) {
+                $this->logger->info('Файл загрузки пуст');
             } else {
-                $this->log($export->id, 'Файл загрузки пуст');
+                $this->vk->setClientId($feed[0][AdsFeed::COL_CLIENT_ID] ?? null);
+
+                /** @var Collection $operations */
+                $operations = ExportOperation::where('export_id', $export->id)
+                    ->where('status', '!=', ExportOperation::STATUS_DONE)
+                    ->get();
+
+                $hasPlan = $operations->count() > 0;
+                if (!$hasPlan) {
+                    $this->logger->info('Составляется план загрузки');
+                    $operations = $this->plan($feed, $export->id);
+                }
+
+                if ($operations->count() == 0) {
+                    $this->logger->notice("Нет изменений для загрузки");
+                } else {
+                    $this->executeOperations($operations, $export->captcha, $export->captcha_code);
+
+                    $fails = ExportOperation::where('export_id', $export->id)
+                        ->where('status', ExportOperation::STATUS_FAILED)
+                        ->count();
+
+                    if ($fails > 0) {
+                        $status = Export::STATUS_PARTIAL_FAILURE;
+                    }
+                }
             }
-            $this->log($export->id, 'Загрузка завершилась');
+            $this->logger->info('Выполнение завершилось');
         } catch (CaptchaException $e) {
-            $this->log($export->id, "Обновление прервано, для продолжения нужна капча");
+            $this->logger->warning("Обновление прервано, для продолжения нужна капча");
             $status = Export::STATUS_INTERRUPTED;
-            $failure = null;
-            $export->captcha = $e->img;
-            $export->captcha_code = null;
+            $captcha = $e->img;
+            $captchaCode = null;
         } catch (\Throwable $e) {
-            $this->log($export->id, "Обновление прервано из-за ошибки: {$e->getMessage()}", ExportLog::LEVEL_ERROR);
+            $this->logger->error("Обновление прервано из-за ошибки: {$e->getMessage()}");
             $status = Export::STATUS_FAILED;
             $failure = $e->getMessage();
         } finally {
             $export->status = $status;
             $export->failure = $failure;
             $export->finish_time = new \DateTime('now');
+            $export->captcha = $captcha;
+            $export->captcha_code = $captchaCode;
 
             $export->save();
         }
@@ -117,41 +133,26 @@ class VkExportAds extends Command
     }
 
     /**
-     * @param Export $export
+     * @param Collection $operations
+     * @param string|null $captcha
+     * @param string|null $captchaCode
      * @throws CaptchaException
      * @throws \Exception
      */
-    private function executePlan(Export $export): void
+    private function executeOperations(Collection $operations, ?string $captcha, ?string $captchaCode): void
     {
-        /** @var Collection $operations */
-        $operations = ExportOperation::where('export_id', $export->id)
-            ->where('status', 'pending')
-            ->orderBy('ad_id', 'ASC')
-            ->get();
-
-        if ($operations->count() == 0) {
-            $this->log($export->id, "Нет изменений для загрузки", ExportLog::LEVEL_NOTICE);
-            return;
-        }
-
-        $this->log($export->id, sprintf("Запланировано %s операций для %s объявлений",
-            $operations->count(),
-            $operations->pluck('ad_id')->unique()->count()
-        ));
-
-
-        $captcha = $export->captcha;
-        $captchaCode = $export->captcha_code;
+        $adsCount = $operations->pluck('ad_id')->unique()->count();
+        $this->logger->info("Запланировано {$operations->count()} операций для {$adsCount} объявлений");
 
         $remaining = $operations->count();
         // обновляем по 5 за раз из-за ограничений API
         // см https://vk.com/dev/ads.updateAds
         /** @var Collection $chunk */
-        foreach ($operations->groupBy('ad_id')->chunk(5) as $chunk) {
+        foreach ($operations->sortBy('ad_id')->groupBy('ad_id')->chunk(5) as $chunk) {
             $chunk = $chunk->collapse();
 
             $adIds = $chunk->pluck('ad_id')->unique()->values()->all();
-            $this->log($export->id, "Обновляются объявления: " . implode(', ', $adIds));
+            $this->logger->info("Обновляются объявления: " . implode(', ', $adIds));
             try {
                 foreach ($chunk as $operation) {
                     $operation->status = ExportOperation::STATUS_PROCESSING;
@@ -164,10 +165,8 @@ class VkExportAds extends Command
 
                 $remaining -= $chunk->count();
                 if ($remaining) {
-                    $captcha = null;
-                    $captchaCode = null;
                     $sleep = random_int(60, 80);
-                    $this->log($export->id, "Осталость {$remaining} операций. Ждем {$sleep} секунд из-за капчи.");
+                    $this->logger->info("Осталость {$remaining} операций. Ждем {$sleep} секунд из-за капчи.");
                     sleep($sleep);
                 }
             } catch (\Exception $e) {
@@ -178,22 +177,90 @@ class VkExportAds extends Command
                 }
 
                 throw $e;
+            } finally {
+                $captchaCode = $captcha = null;
             }
         }
     }
 
-    private function log(int $exportId, string $message, string $level = ExportLog::LEVEL_INFO)
+    private function plan(array $feed, int $exportId): Collection
     {
-        $log = new ExportLog();
-        $log->level = $level;
-        $log->message = $message;
-        $log->export_id = $exportId;
+        $adIds = array_column($feed, AdsFeed::COL_AD_ID);
+        $currentStateFeed = $this->vk->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
-        try {
-            $log->save();
-        } catch (\Exception $e) {
-            error_log('Failed to write log: ' . $e->getMessage());
+        $operations = new Collection();
+        foreach ($this->diff($currentStateFeed, $feed) as $data) {
+            $operation = new ExportOperation($data);
+            $operation->export_id = $exportId;
+            $operation->save();
+
+            $operations->push($operation);
         }
+
+        return $operations;
+    }
+
+    private function diff(array $currentStateFeed, array $newStateFeed): array
+    {
+        $operations = [];
+        foreach ($newStateFeed as $ad) {
+            $adId = $ad[AdsFeed::COL_AD_ID];
+            $currentAd = $currentStateFeed[$adId];
+
+            $needUpdate = function ($field) use ($ad, $currentAd) {
+                return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
+            };
+
+            $editableAdFields = [
+                AdsFeed::COL_AD_NAME,
+                AdsFeed::COL_AD_LINK_URL,
+                AdsFeed::COL_AD_TITLE,
+                AdsFeed::COL_AD_DESCRIPTION,
+                AdsFeed::COL_AD_LINK_TITLE,
+            ];
+            // поля объявления, которые нужно обновить
+            $newAdState = [];
+            foreach ($editableAdFields as $field) {
+                if ($needUpdate($field)) {
+                    $newAdState[$field] = $ad[$field];
+                }
+            }
+            if ($newAdState) {
+                $operations[] = [
+                    'type'       => ExportOperation::TYPE_UPDATE_AD,
+                    'ad_id'      => $adId,
+                    'state_from' => $currentAd,
+                    'state_to'   => $newAdState,
+                    'status'     => ExportOperation::STATUS_PENDING
+                ];
+            }
+
+            $editablePostFields = [
+                AdsFeed::COL_POST_TEXT,
+                AdsFeed::COL_POST_ATTACHMENT_LINK_URL,
+                AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE,
+                AdsFeed::COL_POST_LINK_IMAGE,
+                AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID,
+            ];
+            // поля поста, которые нужно обновить
+            $newPostState = [];
+            foreach ($editablePostFields as $field) {
+                if ($needUpdate($field)) {
+                    $newPostState[$field] = $ad[$field];
+                }
+            }
+            if ($newPostState) {
+                $operations[] = [
+                    'type'       => ExportOperation::TYPE_UPDATE_POST,
+                    'ad_id'      => $adId,
+                    'state_from' => $currentAd,
+                    'state_to'   => $newPostState,
+                    'status'     => ExportOperation::STATUS_PENDING
+                ];
+            }
+        }
+
+        return $operations;
     }
 
 }

@@ -33,8 +33,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/exports_confirm', 'ExportsController@confirm');
     Route::post('/exports_start', 'ExportsController@start');
-    Route::get('/exports_cancel', 'ExportsController@cancel');
-    Route::get('/exports_captcha', 'ExportsController@captcha');
+    Route::get('/exports_cancel', 'ExportsController@cancel')->name('export.cancel');
+    Route::match(['post', 'get'], '/exports_rerun', 'ExportsController@rerun')->name('export.rerun');
+    Route::get('/exports_captcha', 'ExportsController@captcha')->name('export.captcha');
     Route::get('/exports', 'ExportsController@list');
     Route::get('/export', 'ExportsController@item')->name('export.logs');
     Route::get('/exports_operations', 'ExportsController@operations')->name('export.operations');

@@ -141,7 +141,7 @@ class ApiClient
         };
 
         $ads = [];
-        foreach ($this->get('ads.getAds', ['ad_ids' => json_encode($adIds)]) as $ad) {
+        foreach ($this->get('ads.getAds', ['ad_ids' => json_encode(array_unique($adIds))]) as $ad) {
             $ads[$ad['id']] = $ad;
         }
         if (!$ads) {

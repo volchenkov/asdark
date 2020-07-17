@@ -49,7 +49,7 @@
             <p class="small text-muted">
                 Будет сгенерирована Google таблица с текущим состоянием объявлений из выбранных кампаний
             </p>
-            <input class="btn btn-primary" type="submit" />
+            <input class="btn btn-primary" type="submit" value="далее"/>
         </div>
     </div>
 </form>

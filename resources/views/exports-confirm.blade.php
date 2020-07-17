@@ -14,13 +14,13 @@
     </div>
 </div>
 
-<form action="/exports_start" method="POST">
+<form action="{{ route('export.start') }}" method="POST">
     @csrf
     <input type="hidden" name="spreadsheetId" value="{{ $spreadsheetId }}">
     <div class="row my-4">
         <div class="col-2 form-group">
             <input class="btn btn-primary"
-                   value="Начать загрузку в ВК"
+                   value="начать загрузку в ВК"
                    type="submit"/>
         </div>
     </div>

@@ -32,7 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vk_auth_current_state', 'VkOauthController@currentState');
 
     Route::get('/exports_confirm', 'ExportsController@confirm');
-    Route::post('/exports_start', 'ExportsController@start');
+    Route::post('/exports_start', 'ExportsController@start')->name('export.start');
     Route::get('/exports_cancel', 'ExportsController@cancel')->name('export.cancel');
     Route::match(['post', 'get'], '/exports_rerun', 'ExportsController@rerun')->name('export.rerun');
     Route::get('/exports_captcha', 'ExportsController@captcha')->name('export.captcha');

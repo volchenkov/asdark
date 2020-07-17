@@ -225,20 +225,31 @@ class ApiClient
             throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
         }
 
-        foreach ($rsp['ads'] as $r) {
-            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['id'] && $o->type == ExportOperation::TYPE_UPDATE_AD);
-            $failed = isset($r['error_desc']);
-
-            $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
-            $op->error = $failed ? json_encode($r) : null;
+        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_AD) as $operation) {
+            $operation->status = ExportOperation::STATUS_FAILED;
+            $operation->error = null;
+            if (is_array($rsp['ads'])) {
+                foreach ($rsp['ads'] as $adResult) {
+                    if ($adResult['id'] == $operation->ad_id) {
+                        $failed = isset($adResult['error_desc']);
+                        $operation->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
+                        $operation->error = $failed ? json_encode($adResult) : null;
+                    }
+                }
+            }
         }
 
-        foreach ($rsp['posts'] as $r) {
-            $op = $operations->first(fn(ExportOperation $o) => $o->ad_id == $r['adId'] && $o->type == ExportOperation::TYPE_UPDATE_POST);
-            $failed = !isset($r['ok']) || $r['ok'] != 1;
-
-            $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
-            $op->error = $failed ? 'Не удалось обновить пост': null;
+        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_POST) as $operation) {
+            $operation->status = ExportOperation::STATUS_FAILED;
+            $operation->error = 'Не удалось обновить пост';
+            foreach ($rsp['posts'] as $postResult) {
+                if ($postResult['adId'] == $operation->ad_id) {
+                    if (isset($postResult['ok']) && $postResult['ok'] == 1) {
+                        $operation->status = ExportOperation::STATUS_DONE;
+                        $operation->error = null;
+                    }
+                }
+            }
         }
 
         return $operations;

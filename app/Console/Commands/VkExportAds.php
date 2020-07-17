@@ -142,7 +142,7 @@ class VkExportAds extends Command
     private function executeOperations(Collection $operations, ?string $captcha, ?string $captchaCode): void
     {
         $adsCount = $operations->pluck('ad_id')->unique()->count();
-        $this->logger->info("Запланировано {$operations->count()} операций для {$adsCount} объявлений");
+        $this->logger->info("К исполнению {$operations->count()} операций для {$adsCount} объявлений");
 
         $remaining = $operations->count();
         // обновляем по 5 за раз из-за ограничений API

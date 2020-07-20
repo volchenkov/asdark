@@ -80,7 +80,6 @@ class ApiClient
 
     public function getWallPosts(array $posts): array
     {
-        /** @todo fix 100 post limits https://vk.com/dev/wall.getById */
         return $this->get('wall.getById', ['posts' => implode(',', $posts)]);
     }
 
@@ -179,10 +178,13 @@ class ApiClient
             }
 
             $postIds = array_filter(array_unique(array_values($adPostIds)));
-            if ($postIds) {
-                $posts = $this->getWallPosts($postIds);
 
-                $postIdAds = array_flip($adPostIds);
+            $postIdAds = array_flip($adPostIds);
+            // ограничение API - по 100 за раз
+            // см. https://vk.com/dev/wall.getById
+            foreach (array_chunk($postIds, 100) as $postIdsChunk) {
+                $posts = $this->getWallPosts($postIdsChunk);
+
                 foreach ($posts as $post) {
                     $postId = "{$post['from_id']}_{$post['id']}";
                     $adId = $postIdAds[$postId];

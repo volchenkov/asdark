@@ -149,7 +149,7 @@ class ApiClient
                 $ads[$ad['id']] = $ad;
             }
             if ($adsChunk) {
-                $layouts = $this->getAdsLayout(array_keys($adsChunk));
+                $layouts = $this->getAdsLayout(array_column($adsChunk, 'id'));
                 foreach ($layouts as $layout) {
                     $ads[$layout['id']]['layout'] = $layout;
                 }

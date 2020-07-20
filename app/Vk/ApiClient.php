@@ -95,6 +95,7 @@ class ApiClient
 
     public function getFeed(array $adIds, array $fields): array
     {
+        $adIds = array_unique($adIds);
         $getFieldValue = function (array $ad, string $field) {
             switch ($field) {
                 case AdsFeed::COL_AD_ID:
@@ -141,16 +142,18 @@ class ApiClient
         };
 
         $ads = [];
-        foreach ($this->get('ads.getAds', ['ad_ids' => json_encode(array_unique($adIds))]) as $ad) {
-            $ads[$ad['id']] = $ad;
-        }
-        if (!$ads) {
-            return [];
-        }
-
-        $layouts = $this->getAdsLayout(array_keys($ads));
-        foreach ($layouts as $layout) {
-            $ads[$layout['id']]['layout'] = $layout;
+        // предупредить 414 ответ из-за превышения допустимого размера запроса. Эмпирически ~200 id проходит
+        foreach (array_chunk($adIds, 200) as $adIdsChunk) {
+            $adsChunk = $this->get('ads.getAds', ['ad_ids' => json_encode($adIdsChunk)]);
+            foreach ($adsChunk as $ad) {
+                $ads[$ad['id']] = $ad;
+            }
+            if ($adsChunk) {
+                $layouts = $this->getAdsLayout(array_keys($adsChunk));
+                foreach ($layouts as $layout) {
+                    $ads[$layout['id']]['layout'] = $layout;
+                }
+            }
         }
 
         if (AdsFeed::dependsOn('campaign', $fields)) {

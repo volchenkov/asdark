@@ -5,7 +5,19 @@
     <div class="col-md-8">
     </div>
 </div>
-<form action="/ads_edit_generate">
+<script type="text/javascript">
+    function disableSubmitButton(event, form) {
+        let btn = form.querySelector('button[type=submit]');
+        btn.disabled = true;
+
+        let btnLoader = btn.querySelector('span.submit-loader');
+        btnLoader.style.display = 'inline-block';
+
+        let btnTitle = btn.querySelector('span.submit-title');
+        btnTitle.innerText = 'создается таблица';
+    }
+</script>
+<form action="/ads_edit_generate" onsubmit="return disableSubmitButton(event, this);">
     @if ($clientId)
         <input type="hidden" name="client_id" value="{{ $clientId }}"/>
     @endif
@@ -34,7 +46,13 @@
 
     <div class="row mb-5">
         <div class="col-md-8">
-            <input class="btn btn-primary" type="submit" value="далее"/>
+            <button class="btn btn-primary" type="submit" id="feed-generation-submit">
+                <span style="display: none"
+                      class="submit-loader spinner-border spinner-border-sm mr-1"
+                      role="status"
+                      aria-hidden="true"></span>
+                <span class="submit-title">далее</span>
+            </button>
         </div>
     </div>
 </form>

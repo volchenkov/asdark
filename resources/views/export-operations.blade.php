@@ -13,6 +13,7 @@
     $types = [
         \App\ExportOperation::TYPE_UPDATE_AD   => 'обновление полей',
         \App\ExportOperation::TYPE_UPDATE_POST => 'обновление поста',
+        \App\ExportOperation::TYPE_UPDATE_CARD => 'обновление карточки карусели',
     ];
 @endphp
 
@@ -24,7 +25,7 @@
                 <span class="mr-3" title="ID объявления">{{$adId}}</span>
                 <span>{{ $types[$op->type] }}: </span>
                 @foreach($op->state_to as $field => $newValue)
-                    <span title="{{ $op->state_from[$field] }} -> {{ $newValue }}">{{ $field }}</span>
+                    <span title="{{ $op->state_from[$field] }} -> {{ $newValue }}" class="mr-1">{{ $field }}</span>
                 @endforeach
             </li>
         @endforeach

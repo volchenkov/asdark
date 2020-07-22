@@ -95,51 +95,6 @@ class ApiClient
     public function getFeed(array $adIds, array $fields): array
     {
         $adIds = array_unique($adIds);
-        $getFieldValue = function (array $ad, string $field) {
-            switch ($field) {
-                case AdsFeed::COL_AD_ID:
-                    return $ad['id'];
-                case AdsFeed::COL_AD_NAME:
-                    return $ad['name'];
-                case AdsFeed::COL_AD_TITLE:
-                    return $ad['layout']['title'] ?? null;
-                case AdsFeed::COL_AD_LINK_URL:
-                    return $ad['layout']['link_url'] ?? null;
-                case AdsFeed::COL_AD_DESCRIPTION:
-                    return $ad['layout']['description'] ?? null;
-                case AdsFeed::COL_AD_LINK_TITLE:
-                    return $ad['layout']['link_title'] ?? null;
-                case AdsFeed::COL_CAMPAIGN_ID:
-                    return $ad['campaign_id'];
-                case AdsFeed::COL_CAMPAIGN_NAME:
-                    return $ad['campaign']['name'] ?? null;
-                case AdsFeed::COL_POST_TEXT:
-                    return $ad['post']['text'] ?? null;
-                case AdsFeed::COL_POST_LINK_IMAGE:
-                    return $this->getBiggestPic($ad['post']['attachments'][0]['link']['photo']['sizes'] ?? null);
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_URL:
-                    return $ad['post']['attachments'][0]['link']['url'] ?? null;
-                case AdsFeed::COL_POST_ID:
-                    return $ad['post']['id'] ?? null;
-                case AdsFeed::COL_POST_OWNER_ID:
-                    return $ad['post']['owner_id'] ?? null;
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE:
-                    return $ad['post']['attachments'][0]['link']['title'] ?? null;
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE:
-                    return $ad['post']['attachments'][0]['link']['button']['action']['type'] ?? null;
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE:
-                    return $ad['post']['attachments'][0]['link']['button']['title'] ?? null;
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID:
-                    return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
-                case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
-                    return $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
-                case AdsFeed::COL_CLIENT_ID:
-                    return $this->clientId;
-                default:
-                    return null;
-            }
-        };
-
         $ads = [];
         // предупредить 414 ответ из-за превышения допустимого размера запроса. Эмпирически ~200 id проходит
         foreach (array_chunk($adIds, 200) as $adIdsChunk) {
@@ -193,12 +148,11 @@ class ApiClient
                 }
             }
         }
-
         $rows = [];
         foreach ($ads as $ad) {
             $row = [];
             foreach ($fields as $field) {
-                $row[$field] = $getFieldValue($ad, $field);
+                $row[$field] = $this->fetchField($ad, $field);
             }
             $rows[$ad['id']] = $row;
         }
@@ -257,13 +211,24 @@ class ApiClient
             }
         }
 
+        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_CARD) as $operation) {
+            $operation->status = ExportOperation::STATUS_FAILED;
+            $operation->error = 'Не удалось обновить карточку';
+            foreach ($rsp['cards'] as $cardResult) {
+                if ($cardResult['operationId'] == $operation->id && $cardResult['ok'] !== false) {
+                    $operation->status = ExportOperation::STATUS_DONE;
+                    $operation->error = null;
+                }
+            }
+        }
+
         return $operations;
     }
 
     private function formatCode(Collection $operations): string
     {
         $code = "var a = '{$this->getConnection()->data['account_id']}';\n";
-        $code .= "var result = {'ads': [], 'posts': []};\n";
+        $code .= "var result = {'ads': [], 'posts': [], 'cards': []};\n";
 
         $adsUpdates = $operations->where('type', ExportOperation::TYPE_UPDATE_AD)->all();
         if ($adsUpdates) {
@@ -279,6 +244,12 @@ class ApiClient
         foreach ($postUpdates as $operation) {
             $data = json_encode($this->getPostFields($operation), JSON_UNESCAPED_UNICODE);
             $code .= "result.posts.push({'ok': API.wall.editAdsStealth({$data}), 'adId': '{$operation->ad_id}'});\n";
+        }
+
+        $cardsUpdates = $operations->where('type', ExportOperation::TYPE_UPDATE_CARD)->all();
+        foreach ($cardsUpdates as $operation) {
+            $data = json_encode($this->getCardFields($operation), JSON_UNESCAPED_UNICODE);
+            $code .= "result.cards.push({'ok': API.prettyCards.edit({$data}), 'operationId': '{$operation->id}'});\n";
         }
 
         $code .= 'return result;';
@@ -375,16 +346,6 @@ class ApiClient
         return $this->connection;
     }
 
-    private function getBiggestPic($sizes): ?string
-    {
-        if (!is_array($sizes) || !$sizes) {
-            return null;
-        }
-        usort($sizes, fn ($a, $b) => $b['width'] <=> $a['width']);
-
-        return $sizes[0]['url'] ?? null;
-    }
-
     private function getAdFields(ExportOperation $operation): array
     {
         $ad = [
@@ -409,6 +370,79 @@ class ApiClient
         }
 
         return $ad;
+    }
+
+    private function getCardFields(ExportOperation $operation): array
+    {
+        $new = $operation->state_to;
+        $current = $operation->state_from;
+
+        $ownerId = $cardId = null;
+        foreach (array_keys($new) as $field) {
+            switch (AdsFeed::FIELDS[$field]['entity']) {
+                case 'card1':
+                    $ownerId = $current[AdsFeed::COL_CARD_1_OWNER_ID];
+                    $cardId = $current[AdsFeed::COL_CARD_1_ID];
+                    break;
+                case 'card2':
+                    $ownerId = $current[AdsFeed::COL_CARD_2_OWNER_ID];
+                    $cardId = $current[AdsFeed::COL_CARD_2_ID];
+                    break;
+                case 'card3':
+                    $ownerId = $current[AdsFeed::COL_CARD_3_OWNER_ID];
+                    $cardId = $current[AdsFeed::COL_CARD_3_ID];
+                    break;
+                case 'card4':
+                    $ownerId = $current[AdsFeed::COL_CARD_4_OWNER_ID];
+                    $cardId = $current[AdsFeed::COL_CARD_4_ID];
+                    break;
+                case 'card5':
+                    $ownerId = $current[AdsFeed::COL_CARD_5_OWNER_ID];
+                    $cardId = $current[AdsFeed::COL_CARD_5_ID];
+                    break;
+            }
+        }
+        if (!$ownerId || !$cardId) {
+            throw new \UnexpectedValueException('Required param is undefined: owner_id or card_id');
+        }
+
+        $card = [
+            'owner_id' => $ownerId,
+            'card_id'  => $cardId
+        ];
+        if (isset($new[AdsFeed::COL_CARD_1_TITLE])) {
+            $card['title'] = $new[AdsFeed::COL_CARD_1_TITLE];
+        }
+        if (isset($new[AdsFeed::COL_CARD_2_TITLE])) {
+            $card['title'] = $new[AdsFeed::COL_CARD_2_TITLE];
+        }
+        if (isset($new[AdsFeed::COL_CARD_3_TITLE])) {
+            $card['title'] = $new[AdsFeed::COL_CARD_3_TITLE];
+        }
+        if (isset($new[AdsFeed::COL_CARD_4_TITLE])) {
+            $card['title'] = $new[AdsFeed::COL_CARD_4_TITLE];
+        }
+        if (isset($new[AdsFeed::COL_CARD_5_TITLE])) {
+            $card['title'] = $new[AdsFeed::COL_CARD_5_TITLE];
+        }
+
+        if (isset($new[AdsFeed::COL_CARD_1_LINK_URL])) {
+            $card['link'] = $new[AdsFeed::COL_CARD_1_LINK_URL];
+        }
+        if (isset($new[AdsFeed::COL_CARD_2_LINK_URL])) {
+            $card['link'] = $new[AdsFeed::COL_CARD_2_LINK_URL];
+        }
+        if (isset($new[AdsFeed::COL_CARD_3_LINK_URL])) {
+            $card['link'] = $new[AdsFeed::COL_CARD_3_LINK_URL];
+        }
+        if (isset($new[AdsFeed::COL_CARD_4_LINK_URL])) {
+            $card['link'] = $new[AdsFeed::COL_CARD_4_LINK_URL];
+        }
+        if (isset($new[AdsFeed::COL_CARD_5_LINK_URL])) {
+            $card['link'] = $new[AdsFeed::COL_CARD_5_LINK_URL];
+        }
+
+        return $card;
     }
 
     private function getPostFields(ExportOperation $operation): array
@@ -543,6 +577,121 @@ class ApiClient
         }
 
         return null;
+    }
+
+    private function fetchField(array $ad, string $field)
+    {
+        switch ($field) {
+            case AdsFeed::COL_AD_ID:
+                return $ad['id'];
+            case AdsFeed::COL_AD_NAME:
+                return $ad['name'];
+            case AdsFeed::COL_AD_TITLE:
+                return $ad['layout']['title'] ?? null;
+            case AdsFeed::COL_AD_LINK_URL:
+                return $ad['layout']['link_url'] ?? null;
+            case AdsFeed::COL_AD_DESCRIPTION:
+                return $ad['layout']['description'] ?? null;
+            case AdsFeed::COL_AD_LINK_TITLE:
+                return $ad['layout']['link_title'] ?? null;
+
+            case AdsFeed::COL_CAMPAIGN_ID:
+                return $ad['campaign_id'];
+            case AdsFeed::COL_CAMPAIGN_NAME:
+                return $ad['campaign']['name'] ?? null;
+
+            case AdsFeed::COL_POST_TEXT:
+                return $ad['post']['text'] ?? null;
+            case AdsFeed::COL_POST_LINK_IMAGE:
+                return $this->getBiggestPic($ad['post']['attachments'][0]['link']['photo']['sizes'] ?? null);
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_URL:
+                return $ad['post']['attachments'][0]['link']['url'] ?? null;
+            case AdsFeed::COL_POST_ID:
+                return $ad['post']['id'] ?? null;
+            case AdsFeed::COL_POST_OWNER_ID:
+                return $ad['post']['owner_id'] ?? null;
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE:
+                return $ad['post']['attachments'][0]['link']['title'] ?? null;
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_ACTION_TYPE:
+                return $ad['post']['attachments'][0]['link']['button']['action']['type'] ?? null;
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE:
+                return $ad['post']['attachments'][0]['link']['button']['title'] ?? null;
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID:
+                return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
+            case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
+                return $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
+
+            case AdsFeed::COL_CARD_1_TITLE:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['title'] ?? null;
+            case AdsFeed::COL_CARD_1_LINK_URL:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['link_url'] ?? null;
+            case AdsFeed::COL_CARD_1_OWNER_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[0] : null;
+            case AdsFeed::COL_CARD_1_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[1] : null;
+
+            case AdsFeed::COL_CARD_2_TITLE:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['title'] ?? null;
+            case AdsFeed::COL_CARD_2_LINK_URL:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['link_url'] ?? null;
+            case AdsFeed::COL_CARD_2_OWNER_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[0] : null;
+            case AdsFeed::COL_CARD_2_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[1] : null;
+
+            case AdsFeed::COL_CARD_3_TITLE:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['title'] ?? null;
+            case AdsFeed::COL_CARD_3_LINK_URL:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['link_url'] ?? null;
+            case AdsFeed::COL_CARD_3_OWNER_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[0] : null;
+            case AdsFeed::COL_CARD_3_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[1] : null;
+
+            case AdsFeed::COL_CARD_4_TITLE:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['title'] ?? null;
+            case AdsFeed::COL_CARD_4_LINK_URL:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['link_url'] ?? null;
+            case AdsFeed::COL_CARD_4_OWNER_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[0] : null;
+            case AdsFeed::COL_CARD_4_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[1] : null;
+
+            case AdsFeed::COL_CARD_5_TITLE:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['title'] ?? null;
+            case AdsFeed::COL_CARD_5_LINK_URL:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['link_url'] ?? null;
+            case AdsFeed::COL_CARD_5_OWNER_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[0] : null;
+            case AdsFeed::COL_CARD_5_ID:
+                $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['card_id'] ?? null;
+                return $cardId ? explode('_', $cardId)[1] : null;
+
+
+            case AdsFeed::COL_CLIENT_ID:
+                return $this->clientId;
+            default:
+                return null;
+        }
+    }
+
+    private function getBiggestPic($sizes): ?string
+    {
+        if (!is_array($sizes) || !$sizes) {
+            return null;
+        }
+        usort($sizes, fn ($a, $b) => $b['width'] <=> $a['width']);
+
+        return $sizes[0]['url'] ?? null;
     }
 
 }

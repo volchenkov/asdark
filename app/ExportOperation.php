@@ -15,6 +15,7 @@ class ExportOperation extends Model
 
     const TYPE_UPDATE_AD = 'update_ad';
     const TYPE_UPDATE_POST = 'update_post';
+    const TYPE_UPDATE_CARD = 'update_card';
 
     protected $fillable = [
         'type',

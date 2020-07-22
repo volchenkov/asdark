@@ -35,6 +35,18 @@ class VkExportAds extends Command
     private ExportLogger $logger;
 
     /**
+     * Ограничения API:
+     * 1. 5 объявлений за раз https://vk.com/dev/ads.updateAds
+     * 2. 25 вызовов API в одном execute, см https://vk.com/dev/execute
+     *
+     * Выбираем пачки по 4 объявлений за раз т.к. в одном execute тогда будет:
+     * + 1 запрос на выполнение updateAds
+     * + 4 запросов на выполнение editAdsStealth
+     * + 20 (5 (максимум карточек в карусели) * 4 объвлений) запросов prettyCards.edit
+     */
+    const ADS_PER_UPDATE_BATCH = 4;
+
+    /**
      * Create a new command instance.
      *
      * @return void
@@ -143,12 +155,11 @@ class VkExportAds extends Command
     {
         $adsCount = $operations->pluck('ad_id')->unique()->count();
         $this->logger->info("К исполнению {$operations->count()} операций для {$adsCount} объявлений");
-
         $remaining = $operations->count();
-        // обновляем по 5 за раз из-за ограничений API
-        // см https://vk.com/dev/ads.updateAds
+        $adsOperations = $operations->sortBy('ad_id')->groupBy('ad_id');
+
         /** @var Collection $chunk */
-        foreach ($operations->sortBy('ad_id')->groupBy('ad_id')->chunk(5) as $chunk) {
+        foreach ($adsOperations->chunk(self::ADS_PER_UPDATE_BATCH) as $chunk) {
             $chunk = $chunk->collapse();
 
             $adIds = $chunk->pluck('ad_id')->unique()->values()->all();
@@ -211,13 +222,7 @@ class VkExportAds extends Command
                 return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
             };
 
-            $editableAdFields = [
-                AdsFeed::COL_AD_NAME,
-                AdsFeed::COL_AD_LINK_URL,
-                AdsFeed::COL_AD_TITLE,
-                AdsFeed::COL_AD_DESCRIPTION,
-                AdsFeed::COL_AD_LINK_TITLE,
-            ];
+            $editableAdFields = array_keys(AdsFeed::getEditableFields('ad'));
             // поля объявления, которые нужно обновить
             $newAdState = [];
             foreach ($editableAdFields as $field) {
@@ -235,13 +240,7 @@ class VkExportAds extends Command
                 ];
             }
 
-            $editablePostFields = [
-                AdsFeed::COL_POST_TEXT,
-                AdsFeed::COL_POST_ATTACHMENT_LINK_URL,
-                AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE,
-                AdsFeed::COL_POST_LINK_IMAGE,
-                AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID,
-            ];
+            $editablePostFields = array_keys(AdsFeed::getEditableFields('post'));
             // поля поста, которые нужно обновить
             $newPostState = [];
             foreach ($editablePostFields as $field) {
@@ -257,6 +256,24 @@ class VkExportAds extends Command
                     'state_to'   => $newPostState,
                     'status'     => ExportOperation::STATUS_PENDING
                 ];
+            }
+
+            foreach (AdsFeed::CARDS_ENTITIES as $entity) {
+                $newCardState = [];
+                foreach (array_keys(AdsFeed::getEditableFields($entity)) as $field) {
+                    if ($needUpdate($field)) {
+                        $newCardState[$field] = $ad[$field];
+                    }
+                }
+                if ($newCardState) {
+                    $operations[] = [
+                        'type'       => ExportOperation::TYPE_UPDATE_CARD,
+                        'ad_id'      => $adId,
+                        'state_from' => $currentAd,
+                        'state_to'   => $newCardState,
+                        'status'     => ExportOperation::STATUS_PENDING
+                    ];
+                }
             }
         }
 

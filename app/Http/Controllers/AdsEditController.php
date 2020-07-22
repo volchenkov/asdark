@@ -55,7 +55,6 @@ class AdsEditController extends BaseController
     {
         $campaignIds = $request->input('campaign_ids');
         $clientId = $request->input('client_id');
-        $needPosts = filter_var($request->input('need_posts'), FILTER_VALIDATE_BOOLEAN);
 
         $vk = new VkApiClient();
         $vk->setClientId($clientId);
@@ -71,15 +70,7 @@ class AdsEditController extends BaseController
             array_unshift($fields, AdsFeed::COL_CLIENT_ID);
         }
 
-        $getPostFields = function ($entity) {
-            return array_keys(array_filter(AdsFeed::getEntityFields($entity), fn ($f) => $f['editable']));
-        };
-
-        $fields = array_merge($fields, $getPostFields('ad'));
-        if ($needPosts) {
-            $fields = array_merge($fields, $getPostFields('post'));
-        }
-
+        $fields = array_merge($fields, array_keys(AdsFeed::getEditableFields()));
         $feed = $vk->getFeed(array_column($ads, 'id'), $fields);
 
         usort($feed, fn ($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);

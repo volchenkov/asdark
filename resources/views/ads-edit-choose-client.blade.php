@@ -14,12 +14,12 @@
                     <option value="{{ $client['id'] }}"> {{ $client['name'] }}</option>
                 @endforeach
             </select>
-            <div class="text-muted small">Ctrl+F для поиска</div>
+            <div class="text-muted small"><strong>Ctrl + F</strong> для поиска</div>
         </div>
     </div>
     <div class="row mb-5">
         <div class="col-12">
-            <input class="btn btn-primary" type="submit" value="Далее"/>
+            <input class="btn btn-primary" type="submit" value="далее"/>
         </div>
     </div>
 </form>

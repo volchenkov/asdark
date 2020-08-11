@@ -18,7 +18,7 @@
     </div>
 </div>
 
-<div class="row mb-2 bg-light">
+<div class="row mb-2">
     <div class="col-md-3">
         <div class="small text-muted">Статус</div>
         <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
@@ -28,7 +28,7 @@
         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank"> {{ $export['sid'] }} </a>
     </div>
 </div>
-<div class="row mb-4 bg-light">
+<div class="row mb-4">
     <div class="col-md-3">
         <div class="small text-muted">Автор</div>
         {{ $export['user']->name }}

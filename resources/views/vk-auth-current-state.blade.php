@@ -6,7 +6,7 @@
             @if ($connection)
                 @if (isset($connection->data['account_id']))
                     <p> &#128076; <strong class="text-success">ВК подключен</strong></p>
-                    <div>Выбран {{$connection->data['account_name']}} #{{$connection->data['account_id']}}</div>
+                    <div>Выбран {{$connection->data['account_name']}}, id{{$connection->data['account_id']}}</div>
                     <p class="small text-muted">Обновлено {{ $connection->updated_at->addHours(3) }}</p>
                 @else
                     <div class="alert alert-warning">

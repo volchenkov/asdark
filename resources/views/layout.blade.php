@@ -24,46 +24,50 @@
         html, body {
             height: 100%;
         }
+        body {
+            padding-top: 3.5rem;
+        }
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-2 h-100 navbar-dark bg-dark shadow-sm pt-5 position-fixed">
-            <div class="mb-3">
-                <a href="/"
-                   class="navbar-brand">
-                    <strong>ASDARK</strong>
-                </a>
-            </div>
 
-            <ul class="nav flex-column flex-nowrap overflow-hidden">
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+    <button class="navbar-toggler collapsed"
+            type="button"
+            data-toggle="collapse"
+            data-target="#navbarTop"
+            aria-controls="navbarTop"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-collapse collapse" id="navbarTop" style="">
+        <ul class="navbar-nav mr-auto">
+            <a href="/exports" class="navbar-brand"> <strong>ASDARK</strong></a>
+            <li class="nav-item">
+                <a href="/exports"
+                   class="nav-link {{ (request()->is('export*') or request()->is('ads_edit*') ) ? 'active' : '' }}">Редактирование объявлений</a>
+            </li>
+            <li class="nav-item">
+                <a href="/help"
+                   class="nav-link {{ (request()->is('help*')) ? 'active' : '' }}">Справка</a>
+            </li>
+            <li class="nav-item">
+                <a href="/vk_auth_current_state"
+                   class="nav-link {{ (request()->is('vk_auth*')) ? 'active' : '' }}">Подключение ВК</a>
+            </li>
+        </ul>
 
-                <li class="nav-item">
-                    <a href="/vk_auth_current_state"
-                       class="nav-linksmall text-white">Подключение ВК</a>
-                </li>
-                @if ($vkConnection && isset($vkConnection->data['account_id']))
-                    <li class="nav-item">
-                        <a href="/ads_edit"
-                           class="nav-linksmall text-white">Редактирование объявлений</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/exports"
-                           class="nav-linksmall text-white">Загрузки</a>
-                    </li>
-                @endif
-
-                <li class="mt-4">
-                    <a href="/logout" class="nav-linksmall text-white">Выход</a>
-                </li>
-            </ul>
-        </div>
-        <div class="col pt-5 offset-2">
-            @include('toasts')
-            @yield('content')
-        </div>
+        <ul class="navbar-nav ml-md-auto">
+            <li class="nav-item">
+                <a href="/logout" class="nav-link">Выход</a>
+            </li>
+        </ul>
     </div>
-</div>
+</nav>
+<main role="main" class="container mt-4">
+    @include('toasts')
+    @yield('content')
+</main>
 </body>
 </html>

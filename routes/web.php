@@ -29,7 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vk_auth', 'VkOauthController@form');
     Route::get('/vk_auth_callback', 'VkOauthController@callback');
     Route::post('/vk_auth_save', 'VkOauthController@save');
-    Route::get('/vk_auth_current_state', 'VkOauthController@currentState');
+    Route::get('/vk_auth_current_state', 'VkOauthController@currentState')->name('vkAuth.state');
 
     Route::get('/exports_confirm', 'ExportsController@confirm');
     Route::post('/exports_start', 'ExportsController@start')->name('export.start');
@@ -42,7 +42,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/help', 'HelpController@index');
 
-    Route::get('/ads_edit', 'AdsEditController@index');
+    Route::get('/ads_edit', 'AdsEditController@index')->name('adsEdit.start');
     Route::get('/ads_edit_form', 'AdsEditController@form');
     Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');
     Route::get('/ads_edit_generate', 'AdsEditController@generate');

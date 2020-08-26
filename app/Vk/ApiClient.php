@@ -13,21 +13,6 @@ use Illuminate\Support\Collection;
 class ApiClient
 {
 
-    const UPDATE_STATUS_DONE = 0;
-    const UPDATE_STATUS_PARTIAL_FAILURE = 1;
-    const UPDATE_STATUS_PARTIAL_INTERRUPTED = 2;
-
-    const AD_FORMAT_TEXT = 1;
-    const AD_FORMAT_BIG_ING = 2;
-    const AD_FORMAT_PROMO = 4;
-    const AD_FORMAT_SPEC_FOR_GROUPS = 8;
-    const AD_FORMAT_GROUP_POST = 9;
-    const AD_FORMAT_ADAPTIVE = 11;
-
-    const AD_COST_TYPE_CLICKS = 0;
-    const AD_COST_TYPE_VIEWS = 1;
-    const AD_COST_TYPE_OPTIMIZED_VIEWS = 3;
-
     const VERSION = '5.103';
 
     private ?string $clientId = null;
@@ -410,36 +395,30 @@ class ApiClient
             'owner_id' => $ownerId,
             'card_id'  => $cardId
         ];
-        if (isset($new[AdsFeed::COL_CARD_1_TITLE])) {
-            $card['title'] = $new[AdsFeed::COL_CARD_1_TITLE];
-        }
-        if (isset($new[AdsFeed::COL_CARD_2_TITLE])) {
-            $card['title'] = $new[AdsFeed::COL_CARD_2_TITLE];
-        }
-        if (isset($new[AdsFeed::COL_CARD_3_TITLE])) {
-            $card['title'] = $new[AdsFeed::COL_CARD_3_TITLE];
-        }
-        if (isset($new[AdsFeed::COL_CARD_4_TITLE])) {
-            $card['title'] = $new[AdsFeed::COL_CARD_4_TITLE];
-        }
-        if (isset($new[AdsFeed::COL_CARD_5_TITLE])) {
-            $card['title'] = $new[AdsFeed::COL_CARD_5_TITLE];
+        $cardTitleFeedFields = [
+            AdsFeed::COL_CARD_1_TITLE,
+            AdsFeed::COL_CARD_2_TITLE,
+            AdsFeed::COL_CARD_3_TITLE,
+            AdsFeed::COL_CARD_4_TITLE,
+            AdsFeed::COL_CARD_5_TITLE,
+        ];
+        foreach ($cardTitleFeedFields as $cardTitleFeedField) {
+            if (isset($new[$cardTitleFeedField])) {
+                $card['title'] = $new[$cardTitleFeedField];
+            }
         }
 
-        if (isset($new[AdsFeed::COL_CARD_1_LINK_URL])) {
-            $card['link'] = $new[AdsFeed::COL_CARD_1_LINK_URL];
-        }
-        if (isset($new[AdsFeed::COL_CARD_2_LINK_URL])) {
-            $card['link'] = $new[AdsFeed::COL_CARD_2_LINK_URL];
-        }
-        if (isset($new[AdsFeed::COL_CARD_3_LINK_URL])) {
-            $card['link'] = $new[AdsFeed::COL_CARD_3_LINK_URL];
-        }
-        if (isset($new[AdsFeed::COL_CARD_4_LINK_URL])) {
-            $card['link'] = $new[AdsFeed::COL_CARD_4_LINK_URL];
-        }
-        if (isset($new[AdsFeed::COL_CARD_5_LINK_URL])) {
-            $card['link'] = $new[AdsFeed::COL_CARD_5_LINK_URL];
+        $cardLinkFeedFields = [
+            AdsFeed::COL_CARD_1_LINK_URL,
+            AdsFeed::COL_CARD_2_LINK_URL,
+            AdsFeed::COL_CARD_3_LINK_URL,
+            AdsFeed::COL_CARD_4_LINK_URL,
+            AdsFeed::COL_CARD_5_LINK_URL,
+        ];
+        foreach ($cardLinkFeedFields as $cardLinkFeedField) {
+            if (isset($new[$cardLinkFeedField])) {
+                $card['link'] = $new[$cardLinkFeedField];
+            }
         }
 
         return $card;

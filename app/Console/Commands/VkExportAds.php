@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Export;
 use App\ExportLogger;
 use App\ExportOperation;
+use App\ExportPlanner;
 use App\Vk\CaptchaException;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
@@ -33,6 +34,7 @@ class VkExportAds extends Command
     private GoogleApiClient $google;
     private VkApiClient $vk;
     private ExportLogger $logger;
+    private ExportPlanner $planner;
 
     /**
      * Ограничения API:
@@ -46,16 +48,13 @@ class VkExportAds extends Command
      */
     const ADS_PER_UPDATE_BATCH = 4;
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function __construct(ExportPlanner $planner, GoogleApiClient $google, VkApiClient $vk)
     {
+        $this->google = $google;
+        $this->vk = $vk;
+        $this->planner = $planner;
+
         parent::__construct();
-        $this->google = new GoogleApiClient();
-        $this->vk = new VkApiClient();
     }
 
     public function handle()
@@ -199,82 +198,10 @@ class VkExportAds extends Command
         $adIds = array_column($feed, AdsFeed::COL_AD_ID);
         $currentStateFeed = $this->vk->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
-        $operations = new Collection();
-        foreach ($this->diff($currentStateFeed, $feed) as $data) {
-            $operation = new ExportOperation($data);
+        $operations = $this->planner->plan($currentStateFeed, $feed);
+        foreach ($operations as $operation) {
             $operation->export_id = $exportId;
             $operation->save();
-
-            $operations->push($operation);
-        }
-
-        return $operations;
-    }
-
-    private function diff(array $currentStateFeed, array $newStateFeed): array
-    {
-        $operations = [];
-        foreach ($newStateFeed as $ad) {
-            $adId = $ad[AdsFeed::COL_AD_ID];
-            $currentAd = $currentStateFeed[$adId];
-
-            $needUpdate = function ($field) use ($ad, $currentAd) {
-                return array_key_exists($field, $ad) && $ad[$field] != $currentAd[$field];
-            };
-
-            $editableAdFields = array_keys(AdsFeed::getEditableFields('ad'));
-            // поля объявления, которые нужно обновить
-            $newAdState = [];
-            foreach ($editableAdFields as $field) {
-                if ($needUpdate($field)) {
-                    $newAdState[$field] = $ad[$field];
-                }
-            }
-            if ($newAdState) {
-                $operations[] = [
-                    'type'       => ExportOperation::TYPE_UPDATE_AD,
-                    'ad_id'      => $adId,
-                    'state_from' => $currentAd,
-                    'state_to'   => $newAdState,
-                    'status'     => ExportOperation::STATUS_PENDING
-                ];
-            }
-
-            $editablePostFields = array_keys(AdsFeed::getEditableFields('post'));
-            // поля поста, которые нужно обновить
-            $newPostState = [];
-            foreach ($editablePostFields as $field) {
-                if ($needUpdate($field)) {
-                    $newPostState[$field] = $ad[$field];
-                }
-            }
-            if ($newPostState) {
-                $operations[] = [
-                    'type'       => ExportOperation::TYPE_UPDATE_POST,
-                    'ad_id'      => $adId,
-                    'state_from' => $currentAd,
-                    'state_to'   => $newPostState,
-                    'status'     => ExportOperation::STATUS_PENDING
-                ];
-            }
-
-            foreach (AdsFeed::CARDS_ENTITIES as $entity) {
-                $newCardState = [];
-                foreach (array_keys(AdsFeed::getEditableFields($entity)) as $field) {
-                    if ($needUpdate($field)) {
-                        $newCardState[$field] = $ad[$field];
-                    }
-                }
-                if ($newCardState) {
-                    $operations[] = [
-                        'type'       => ExportOperation::TYPE_UPDATE_CARD,
-                        'ad_id'      => $adId,
-                        'state_from' => $currentAd,
-                        'state_to'   => $newCardState,
-                        'status'     => ExportOperation::STATUS_PENDING
-                    ];
-                }
-            }
         }
 
         return $operations;

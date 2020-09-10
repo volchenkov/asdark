@@ -18,7 +18,7 @@ class ErrorResponseException extends \RuntimeException
             'message' => 'Во время запроса к API ВК произошла ошибка.',
             'todo'    => 'Повторите попытку, если это не поможет - обратитесь к администратору',
             'details' => $this->getMessage()
-        ]);
+        ], 500);
     }
 
 }

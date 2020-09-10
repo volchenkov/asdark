@@ -8,7 +8,7 @@ namespace App\Vk;
 class FloodControlException extends ErrorResponseException
 {
 
-    /**
+    /**E
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
@@ -18,7 +18,7 @@ class FloodControlException extends ErrorResponseException
             'message' => 'Превышено допустимое число обращений к API ВК',
             'todo'    => 'Ничего страшного, подождите несколько секунд и повторите попытку, должно сработать',
             'details' => $this->getMessage()
-        ]);
+        ], 429);
     }
 
 }

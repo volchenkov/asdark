@@ -11,10 +11,11 @@ use \GuzzleHttp\Client;
 class VkOauthController extends BaseController
 {
 
-    public function currentState()
+    public function currentState(Request $request)
     {
         return view('vk-auth-current-state', [
-            'connection' => Connection::where('system', 'vk')->first()
+            'connection' => Connection::where('system', 'vk')->first(),
+            'notify'     => boolval($request->input('notify'))
         ]);
     }
 

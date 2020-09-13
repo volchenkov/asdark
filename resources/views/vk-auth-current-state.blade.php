@@ -1,6 +1,17 @@
 @extends('layout')
 
 @section('content')
+    @if ($notify)
+        <div class="row">
+            <div class="col-md-8">
+                <div class="alert alert-info" role="alert">
+                    <p><strong>Нужно авторизовать ВК</strong></p>
+                    <p>Для продолжения работы система должна быть подключена к API ВК с правами на редактирование объявлений</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-md-6 form-group">
             @if ($connection)

@@ -31,6 +31,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/vk_auth_save', 'VkOauthController@save');
     Route::get('/vk_auth_current_state', 'VkOauthController@currentState')->name('vkAuth.state');
 
+    Route::middleware([\App\Http\Middleware\CheckVkConnection::class])->group(function() {
+        Route::get('/ads_edit_form', 'AdsEditController@form')->name('adsEdit.start');
+        Route::get('/ads_edit_generate', 'AdsEditController@generate');
+        Route::get('/ads_edit_get_campaigns', 'AdsEditController@getCampaigns');
+    });
     Route::get('/exports_confirm', 'ExportsController@confirm');
     Route::post('/exports_start', 'ExportsController@start')->name('export.start');
     Route::get('/exports_cancel', 'ExportsController@cancel')->name('export.cancel');
@@ -39,16 +44,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/exports', 'ExportsController@list');
     Route::get('/export', 'ExportsController@item')->name('export.logs');
     Route::get('/exports_operations', 'ExportsController@operations')->name('export.operations');
-
     Route::get('/help', 'HelpController@index');
-
-    Route::get('/ads_edit_form', 'AdsEditController@form')->name('adsEdit.start');
-    Route::get('/ads_edit_choose_client', 'AdsEditController@chooseClient');
-    Route::get('/ads_edit_generate', 'AdsEditController@generate');
-    Route::get('/ads_edit_get_campaigns', 'AdsEditController@getCampaigns');
-
     Route::get('admin/exports', 'AdminController@exports');
-
     Route::get('/logout', function () {
         Auth::logout();
         return redirect('/login');

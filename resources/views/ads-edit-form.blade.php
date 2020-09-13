@@ -4,7 +4,7 @@
 <div id="app">
     <div class="row">
         <div class="col-md-8 form-group">
-            <p>Ознакомьтесь с <a href="/help#caveats">ограничениями редактирования</a> и <a href="/help#editable-fields" target="_blank">списком редактируемых полей</a></p>
+            <p>Ознакомьтесь с <a href="/help#caveats" target="_blank">ограничениями редактирования</a> и <a href="/help#editable-fields" target="_blank">списком редактируемых полей</a></p>
 
             <v-select :options="clients"
                       label="name"

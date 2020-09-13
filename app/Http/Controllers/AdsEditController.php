@@ -26,11 +26,6 @@ class AdsEditController extends BaseController
     {
         $clients = $vk->getClients();
 
-        $clientId = $request->input('client_id');
-        $campaigns = $vk
-            ->setClientId($clientId)
-            ->getCampaigns();
-
         if (is_null($clients)) {
             $clients = [[
                 'id'   => 0,
@@ -39,11 +34,7 @@ class AdsEditController extends BaseController
         }
         usort($clients, fn ($a, $b) => strcmp($a["name"], $b["name"]));
 
-        return view('ads-edit-generation-form', [
-            'clients'   => $clients,
-            'clientId'  => $clientId,
-            'campaigns' => $campaigns
-        ]);
+        return view('ads-edit-form', ['clients' => $clients]);
     }
 
     public function generate(Request $request, VkApiClient $vk, GoogleApiClient $google)

@@ -2,10 +2,6 @@
 
 @section('content')
 <div id="app">
-    @if ($clientId)
-        <input type="hidden" name="client_id" value="{{ $clientId }}"/>
-    @endif
-
     <div class="row">
         <div class="col-md-8 form-group">
             <p>Ознакомьтесь с <a href="/help#caveats">ограничениями редактирования</a> и <a href="/help#editable-fields" target="_blank">списком редактируемых полей</a></p>

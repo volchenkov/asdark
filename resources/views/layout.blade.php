@@ -27,11 +27,23 @@
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
     <style>
-        html, body {
-            height: 100%;
+        html {
+            position: relative;
+            min-height: 100%;
         }
         body {
+            margin-bottom: 60px;
             padding-top: 3.5rem;
+        }
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            line-height: 60px;
+        }
+        .text-underlined {
+            text-decoration: underline;
         }
     </style>
 
@@ -62,14 +74,6 @@
                 <a href="/exports"
                    class="nav-link {{ request()->is('export*') ? 'active' : '' }}">Загрузки</a>
             </li>
-            <li class="nav-item">
-                <a href="/help"
-                   class="nav-link {{ (request()->is('help*')) ? 'active' : '' }}">Справка</a>
-            </li>
-            <li class="nav-item">
-                <a href="/vk_auth_current_state"
-                   class="nav-link {{ (request()->is('vk_auth*')) ? 'active' : '' }}">Подключение ВК</a>
-            </li>
         </ul>
 
         <ul class="navbar-nav ml-md-auto">
@@ -83,5 +87,13 @@
     @include('toasts')
     @yield('content')
 </main>
+<footer class="footer">
+    <div class="container">
+        <a href="/help"
+           class="mr-3 text-muted {{ (request()->is('help*')) ? 'text-underlined' : '' }}">Справка</a>
+        <a href="/vk_auth_current_state"
+           class="text-muted {{ (request()->is('vk_auth*')) ? 'text-underlined' : '' }}">Подключение ВК</a>
+    </div>
+</footer>
 </body>
 </html>

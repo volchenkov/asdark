@@ -47,6 +47,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ads_edit_generate', 'AdsEditController@generate');
     Route::get('/ads_edit_get_campaigns', 'AdsEditController@getCampaigns');
 
+    Route::get('admin/exports', 'AdminController@exports');
+
     Route::get('/logout', function () {
         Auth::logout();
         return redirect('/login');

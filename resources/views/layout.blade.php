@@ -53,10 +53,14 @@
     </button>
     <div class="navbar-collapse collapse" id="navbarTop" style="">
         <ul class="navbar-nav mr-auto">
-            <a href="/exports" class="navbar-brand"> <strong>ASDARK</strong></a>
+            <a href="/" class="navbar-brand"> <strong>ASDARK</strong></a>
+            <li class="nav-item">
+                <a href="{{ route('adsEdit.start') }}"
+                   class="nav-link {{ request()->is('ads_edit*') ? 'active' : '' }}">Редактирование объявлений</a>
+            </li>
             <li class="nav-item">
                 <a href="/exports"
-                   class="nav-link {{ (request()->is('export*') or request()->is('ads_edit*') ) ? 'active' : '' }}">Редактирование объявлений</a>
+                   class="nav-link {{ request()->is('export*') ? 'active' : '' }}">Загрузки</a>
             </li>
             <li class="nav-item">
                 <a href="/help"

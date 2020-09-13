@@ -13,11 +13,12 @@ class ExportsController extends BaseController
     public function list()
     {
         $exports = Export::with('user')
+            ->where('user_id', Auth::user()->id)
             ->orderByDesc('id')
             ->limit(51)
             ->get();
 
-        return view('exports-list', ['exports' => $exports]);
+        return view('exports', ['exports' => $exports]);
     }
 
     public function captcha(Request $request)

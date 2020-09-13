@@ -2,22 +2,6 @@
 
 @section('content')
 
-<div class="row mb-2">
-    <div class="col">
-        @if ($vkConnection && isset($vkConnection->data['account_id']))
-            <div class="py-4 text-center">
-                <a href="{{ route('adsEdit.start') }}" class="btn btn-primary" role="button">редактировать объявления</a>
-            </div>
-        @else
-            <div class="alert alert-info">
-                <h4 class="alert-heading">Необходимо подключить ВК</h4>
-                <p>Для редактирования объявлений нужно <a href="{{ route('vkAuth.state') }}" class="alert-link">авторизовать приложение в ВК</a></p>
-            </div>
-        @endif
-    </div>
-</div>
-
-
 <div class="row">
     <div class="col-md-12">
         <h2> Загрузки</h2>
@@ -25,7 +9,6 @@
             <thead>
             <tr>
                 <th scope="col">Создана</th>
-                <th scope="col">Автор</th>
                 <th scope="col">Таблица объявлений</th>
                 <th scope="col">Статус</th>
                 <th scope="col"></th>
@@ -38,7 +21,6 @@
                     {{ $export['created_at']->addHours(3)->format('H:i:s') }}
                     <div class="small text-muted">{{ $export['created_at']->format('Y-m-d') }}</div>
                 </td>
-                <td>{{ $export['user']->name }}</td>
                 <td>
                     <div>
                         <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>

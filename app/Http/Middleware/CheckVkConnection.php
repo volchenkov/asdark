@@ -17,7 +17,7 @@ class CheckVkConnection
     public function handle($request, Closure $next)
     {
         $conn = Connection::where('system', 'vk')->first();
-        if (!$conn || !isset($vkConnection->data['account_id'])) {
+        if (!$conn || !isset($conn->data['account_id'])) {
             return redirect()->route('vkAuth.state', ['notify' => 1]);
         }
 

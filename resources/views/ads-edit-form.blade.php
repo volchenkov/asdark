@@ -154,7 +154,7 @@
                 this.campaignsLoadingError = false;
                 this.loading = true;
 
-                fetch('/ads_edit_get_campaigns')
+                fetch(addQueryParams('/ads_edit_get_campaigns', {client_id: this.selectedClient}))
                     .then(response => {
                         if (response.ok) {
                             response.json()

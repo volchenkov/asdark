@@ -29,7 +29,7 @@
             </div>
         </div>
 
-        <div class="col-md-8 form-group" v-if="campaignsLoaded">
+        <div class="col-md-8 form-group" v-if="campaignsLoaded && !loading">
             <p v-if="campaigns.length == 0">Кампании клиента не найдены</p>
             <v-select :options="campaigns"
                       label="name"
@@ -48,13 +48,13 @@
                 </template>
             </v-select>
         </div>
-        <div class="col-md-8 form-group text-danger" v-if="campaignsLoadingError">
+        <div class="col-md-8 form-group text-danger" v-if="campaignsLoadingError && !loading">
             <div><strong>Не удалось загрузить кампании клиента 😞 </strong></div>
             <div>Попробуйте снова, если это не впервые - обратитесь к администратору.</div>
         </div>
     </div>
 
-    <div class="row" v-if="loadingFeedError">
+    <div class="row" v-if="loadingFeedError && !loading">
         <div class="col-md-8 form-group text-danger">
             <div class="alert alert-warning">
                 <div><strong>Не удалось создать таблицу с объявлениями 😞 </strong></div>
@@ -63,7 +63,7 @@
         </div>
     </div>
 
-    <div class="row mb-5" v-if="campaignsLoaded && !(loadingFeed || sid)">
+    <div class="row mb-5" v-if="campaignsLoaded && campaigns.length > 0 && !(loadingFeed || sid) && !loading">
         <div class="col-md-8">
             <button class="btn btn-primary"
                     :disabled="!selectedCampaigns || selectedCampaigns.length == 0"
@@ -73,7 +73,7 @@
     </div>
 
 
-    <div class="col-md-8 form-group" v-if="loadingFeed">
+    <div class="col-md-8 form-group" v-if="loadingFeed && !loading">
         <div class="text-center my-3" >
             <div class="spinner-border text-secondary" role="status" title="Сбор объявлений из ВК">
                 <span class="sr-only">Загрузка...</span>
@@ -88,7 +88,7 @@
             <p>
                 <strong><a :href="'https://docs.google.com/spreadsheets/d/'+sid" target="_blank">https://docs.google.com/spreadsheets/d/@{{sid}}</a></strong>
             </p>
-            <p>После редактирования таблицы воспользуйтесь кнопкой ниже:</p>
+            <p>Отредактируйте таблицу и начните загрузку в ВК:</p>
         </div>
 
         <div class="col-12">
@@ -144,17 +144,16 @@
                     });
             },
             fetchCampaigns(clientId) {
+                this.campaigns = [];
+                this.selectedCampaigns = [];
+                this.campaignsLoaded = false;
+                this.campaignsLoadingError = false;
                 if (clientId === null) {
-                    this.campaigns = [];
-                    this.selectedCampaigns = [];
-                    this.campaignsLoaded = false;
-
                     return;
                 }
-                this.campaignsLoadingError = false;
                 this.loading = true;
 
-                fetch(addQueryParams('/ads_edit_get_campaigns', {client_id: this.selectedClient}))
+                fetch(addQueryParams('/ads_edit_get_campaigns', {client_id: clientId}))
                     .then(response => {
                         if (response.ok) {
                             response.json()

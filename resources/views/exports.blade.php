@@ -47,6 +47,11 @@
                 </td>
             </tr>
             @endforeach
+            @if ($exports->count() == 0)
+                <tr>
+                    <td colspan="47" class="text-center">Здесь будут запланированные вами загрузки в ВК</td>
+                </tr>
+            @endif
             </tbody>
         </table>
 

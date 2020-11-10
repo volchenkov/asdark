@@ -100,6 +100,17 @@
         <div class="my-2">
             @yield('export-tab')
         </div>
+
+        @if($export['status'] == \App\Export::STATUS_PENDING)
+            <div class="my-2">
+                <p>Загрузка пока в очереди, скоро начнется</p>
+            </div>
+        @endif
+        @if($export['status'] == \App\Export::STATUS_CANCELED)
+            <div class="my-2">
+                <p>Загрузка была отменена, с этим уже ничего не поделать</p>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

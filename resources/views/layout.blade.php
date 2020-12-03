@@ -26,6 +26,8 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
+    <link rel="stylesheet" type="text/css" href="{{ asset('/css/styles.css') }}" />
+
     <style>
         html {
             position: relative;

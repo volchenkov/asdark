@@ -27,7 +27,7 @@
         @foreach($operations as $op)
             <tr>
                 @if ($loop->first)
-                <td rowspan="{{ $operations->count() }}"> {{ $adId }}</td>
+                <td rowspan="{{ $operations->count() }}" class="pt-2"> {{ $adId }}</td>
                 @endif
                 <td>
                     <details>

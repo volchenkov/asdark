@@ -32,9 +32,12 @@
                 <td>
                     <details>
                         <summary class="text-{{ $statuses[$op->status]['color'] }}">
-                            <span>{{ $types[$op->type] }}: </span>
+                            <span title="Операция {{ $statuses[$op->status]['title'] }}">
+                                <small>{!! $statuses[$op->status]['icon'] !!}</small>
+                                {{ $types[$op->type] }}:
+                            </span>
                             @foreach($op->state_to as $field => $newValue)
-                                <span title="{{ $op->state_from[$field] }} -> {{ $newValue }}" class="mr-1">{{ $field }}</span>
+                                <span class="mr-1">{{ $field }}</span>
                             @endforeach
 
                             <button class="btn ml-1">
@@ -44,10 +47,7 @@
                             </button>
                         </summary>
 
-                        <div class="px-3 py-2">
-                            <div class="mb-2">
-                                <span title="">{!! $statuses[$op->status]['icon'] !!} операция {{ $statuses[$op->status]['title'] }}</span>
-                            </div>
+                        <div class="px-4 py-2">
                             @foreach($op->state_to as $field => $newValue)
                                 <div class="{{ !$loop->first ? 'mt-3' : ''}}">Поле <strong>{{ $field }}</strong>:</div>
                                 <div class="text-muted small">До</div>

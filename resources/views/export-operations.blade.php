@@ -20,12 +20,13 @@
 <table class="table table-borderless">
     @foreach($export->operations->sortBy('ad_id')->groupBy('ad_id') as $adId => $operations)
         @foreach($operations as $op)
-            <tr class="text-{{ $statuses[$op->status]['color'] }}">
+            <tr class="text-{{ $statuses[$op->status]['color'] }}"
+                onclick='console.log("Загрузка {{ $op->id }}", @json($op))'>
                 <td class="fit" title="{{ $statuses[$op->status]['title'] }}">
                     <small>{!! $statuses[$op->status]['icon'] !!}</small>
                 </td>
-                <td class="fit text-center" title="ID объявления">
-                    <span>{!! $loop->first ? $adId : '&#12291;' !!}</span>
+                <td class="fit" title="Объявление ID {{ $adId }}">
+                    <span>{{ $adId }}</span>
                 </td>
                 <td>
                     <span>{{ $types[$op->type] }}:</span>

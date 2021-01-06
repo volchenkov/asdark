@@ -1,26 +1,9 @@
-details {
-    user-select: none;
+.table td.fit,
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
 }
-details[open] summary svg {
-    transform: rotate(-90deg);
-}
-summary {
-    cursor: pointer;
-}
-svg {
-    transition: all 0.3s;
-}
-summary::-webkit-details-marker {
-    display: none;
-}
+
 :focus {
     outline: none;
 }
-
-
-.fill-current {
-    fill: #636b6f;
-}
-.w-4 { width: 1rem; }
-
-.h-4 { height: 1rem; }

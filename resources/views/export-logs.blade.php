@@ -2,18 +2,19 @@
 
 @section('export-tab')
     @php
-        $logColors = [
-            \App\ExportLog::LEVEL_ERROR   => 'danger',
-            \App\ExportLog::LEVEL_WARNING => 'dark',
-            \App\ExportLog::LEVEL_NOTICE  => 'dark',
-            \App\ExportLog::LEVEL_INFO    => 'secondary',
+        $logClasses = [
+            \App\ExportLog::LEVEL_ERROR   => 'text-danger',
+            \App\ExportLog::LEVEL_WARNING => 'font-weight-bold',
+            \App\ExportLog::LEVEL_NOTICE  => 'font-weight-bold',
+            \App\ExportLog::LEVEL_INFO    => '',
         ];
     @endphp
 
     @foreach($export->logs->sortBy('id') as $log)
         <div>
-            <span class="text-black-50 small">{{ $log->created_at }}</span>
-            <span class="text-{{ $logColors[$log->level] }}"> {{ $log->message }} </span>
+            <span class="text-muted small"
+                  title="Время события {{ $log->created_at->addHours(3) }}">{{ $log->created_at->addHours(3)->format('H:i:s') }}</span>
+            <span class="{{ $logClasses[$log->level] }} ml-2">{{ $log->message }}</span>
         </div>
     @endforeach
 

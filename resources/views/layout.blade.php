@@ -55,7 +55,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top shadow-sm">
     <div class="container">
         <button class="navbar-toggler collapsed"
                 type="button"
@@ -91,7 +91,7 @@
     @include('toasts')
     @yield('content')
 </main>
-<footer class="footer">
+<footer class="footer bg-light">
     <div class="container">
         <a href="/help"
            class="mr-3 text-muted {{ (request()->is('help*')) ? 'text-underlined' : '' }}">справка</a>

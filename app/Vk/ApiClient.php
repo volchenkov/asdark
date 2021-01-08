@@ -145,26 +145,30 @@ class ApiClient
         return $rows;
     }
 
+    public function execute(string $code, $captcha = null, $captchaKey = null)
+    {
+        $payload = ['code' => $code];
+
+        if ($captcha && $captchaKey) {
+            $payload['captcha_sid'] = $this->fetchCaptchaSid($captcha);
+            $payload['captcha_key'] = $captchaKey;
+        }
+
+        return $this->post('execute', $payload);
+    }
+
     /**
      * @param Collection $operations
-     * @param null $captcha
-     * @param null $captchaCode
+     * @param string|null $captcha
+     * @param string|null $captchaKey
      * @return Collection
      * @throws CaptchaException
      */
-    public function batchUpdate(Collection $operations, $captcha = null, $captchaCode = null): Collection
+    public function batchUpdate(Collection $operations, $captcha = null, $captchaKey = null): Collection
     {
-        $params = ['code' => $this->formatCode($operations)];
+        $code = $this->formatCode($operations);
+        $rsp = $this->execute($code, $captcha, $captchaKey);
 
-        if ($captcha && $captchaCode) {
-            $captchaSid = $this->fetchCaptchaSid($captcha);
-            $params = array_replace($params, [
-                'captcha_sid' => $captchaSid,
-                'captcha_key' => $captchaCode
-            ]);
-        }
-
-        $rsp = $this->post('execute', $params);
         if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
             throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
         }

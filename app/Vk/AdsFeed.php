@@ -3,6 +3,9 @@
 
 namespace App\Vk;
 
+/**
+ * Отражение многоуровневой вложенной структуры объявлений из вк в двумерную, удобную для представления в таблице
+ */
 class AdsFeed
 {
 
@@ -35,6 +38,7 @@ class AdsFeed
     const COL_AD_TARGETING_CITIES = 'targeting_cities';
     const COL_POST_ATTACHMENT_LINK_VIDEO_ID = 'post_attachments_link_video_id';
     const COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID = 'post_attachments_link_video_owner_id';
+    const COL_POST_ATTACHMENT_CARDS = 'post_attachments_cards';
     const COL_CARD_1_TITLE = 'card_1_title';
     const COL_CARD_1_LINK_URL = 'card_1_link_url';
     const COL_CARD_1_OWNER_ID = 'card_1_owner_id';
@@ -299,6 +303,11 @@ class AdsFeed
             'editable' => false,
             'entity'   => 'card5',
             'desc'     => 'ID первой пятой карусели'
+        ],
+        self::COL_POST_ATTACHMENT_CARDS => [
+            'editable' => false,
+            'entity'   => 'post',
+            'desc'     => 'Список ID карточек карусели через запятую'
         ],
     ];
 

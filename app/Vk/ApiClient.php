@@ -443,6 +443,9 @@ class ApiClient
         if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_URL]) {
             $post['attachments'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_URL];
         }
+        if ($current[AdsFeed::COL_POST_ATTACHMENT_CARDS]) {
+            $post['attachments'] = $current[AdsFeed::COL_POST_ATTACHMENT_CARDS];
+        }
         if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE]) {
             $post['link_title'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
         }
@@ -465,6 +468,7 @@ class ApiClient
             $post['link_image'] = $current[AdsFeed::COL_POST_LINK_IMAGE];
         }
 
+        // поля ниже - редактируемые
         if (isset($new[AdsFeed::COL_POST_TEXT])) {
             $post['message'] = $new[AdsFeed::COL_POST_TEXT];
         }
@@ -658,8 +662,9 @@ class ApiClient
             case AdsFeed::COL_CARD_5_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
-
-
+            case AdsFeed::COL_POST_ATTACHMENT_CARDS:
+                $cards = $ad['post']['attachments'][0]['pretty_cards']['cards'] ?? [];
+                return $cards ? 'pretty_card'.implode(',pretty_card', array_column($cards, 'card_id')) : null;
             case AdsFeed::COL_CLIENT_ID:
                 return $this->clientId;
             default:

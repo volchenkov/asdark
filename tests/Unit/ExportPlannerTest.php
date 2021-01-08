@@ -109,13 +109,13 @@ class ExportPlannerTest extends TestCase
             AdsFeed::COL_CARD_3_TITLE    => "card_3_title_edited",
         ];
 
-        $newStateAd13 = [
+        $editedStateAd13 = [
             AdsFeed::COL_CARD_5_LINK_URL => "card_5_link_url_edited",
             AdsFeed::COL_CARD_1_TITLE    => "card_1_title_edited",
         ];
         $newStateFeed = [
             array_replace($currentStateFeed[11], $editedFieldsAd11),
-            array_replace($currentStateFeed[13], $newStateAd13)
+            array_replace($currentStateFeed[13], $editedStateAd13)
         ];
 
         $expectedOperations = new Collection();
@@ -124,14 +124,28 @@ class ExportPlannerTest extends TestCase
                 'type'       => ExportOperation::TYPE_UPDATE_CARD,
                 'ad_id'      => 11,
                 'state_from' => $currentStateFeed[11],
-                'state_to'   => $editedFieldsAd11,
+                'state_to'   => [AdsFeed::COL_CARD_2_LINK_URL => 'card_2_link_url_edited'],
+                'status'     => ExportOperation::STATUS_PENDING
+            ]))
+            ->push(new ExportOperation([
+                'type'       => ExportOperation::TYPE_UPDATE_CARD,
+                'ad_id'      => 11,
+                'state_from' => $currentStateFeed[11],
+                'state_to'   => [AdsFeed::COL_CARD_3_TITLE => 'card_3_title_edited'],
                 'status'     => ExportOperation::STATUS_PENDING
             ]))
             ->push(new ExportOperation([
                 'type'       => ExportOperation::TYPE_UPDATE_CARD,
                 'ad_id'      => 13,
                 'state_from' => $currentStateFeed[13],
-                'state_to'   => $newStateAd13,
+                'state_to'   => [AdsFeed::COL_CARD_1_TITLE => "card_1_title_edited"],
+                'status'     => ExportOperation::STATUS_PENDING
+            ]))
+            ->push(new ExportOperation([
+                'type'       => ExportOperation::TYPE_UPDATE_CARD,
+                'ad_id'      => 13,
+                'state_from' => $currentStateFeed[13],
+                'state_to'   => [AdsFeed::COL_CARD_5_LINK_URL => "card_5_link_url_edited"],
                 'status'     => ExportOperation::STATUS_PENDING
             ]));
         $this->assertEquals($expectedOperations, $planner->plan($currentStateFeed, $newStateFeed));

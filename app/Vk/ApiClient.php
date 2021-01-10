@@ -166,47 +166,50 @@ class ApiClient
      */
     public function batchUpdate(Collection $operations, $captcha = null, $captchaKey = null): Collection
     {
-        $code = $this->formatCode($operations);
+        $operations = $this->uploadImages($operations);
+        $uploadedImagesOperations = $operations->whereNotIn('status', [ExportOperation::STATUS_FAILED]);
+
+        $code = $this->formatCode($uploadedImagesOperations);
         $rsp = $this->execute($code, $captcha, $captchaKey);
 
         if (!array_key_exists('ads', $rsp) || !array_key_exists('posts', $rsp)) {
             throw new \RuntimeException('Failed to update ads: ' . json_encode($rsp));
         }
 
-        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_AD) as $operation) {
-            $operation->status = ExportOperation::STATUS_FAILED;
-            $operation->error = null;
+        foreach ($uploadedImagesOperations->where('type', ExportOperation::TYPE_UPDATE_AD) as $op) {
+            $op->status = ExportOperation::STATUS_FAILED;
+            $op->error = null;
             if (is_array($rsp['ads'])) {
                 foreach ($rsp['ads'] as $adResult) {
-                    if ($adResult['id'] == $operation->ad_id) {
+                    if ($adResult['id'] == $op->ad_id) {
                         $failed = isset($adResult['error_desc']);
-                        $operation->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
-                        $operation->error = $failed ? json_encode($adResult) : null;
+                        $op->status = $failed ? ExportOperation::STATUS_FAILED : ExportOperation::STATUS_DONE;
+                        $op->error = $failed ? json_encode($adResult) : null;
                     }
                 }
             }
         }
 
-        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_POST) as $operation) {
-            $operation->status = ExportOperation::STATUS_FAILED;
-            $operation->error = 'Не удалось обновить пост';
+        foreach ($uploadedImagesOperations->where('type', ExportOperation::TYPE_UPDATE_POST) as $op) {
+            $op->status = ExportOperation::STATUS_FAILED;
+            $op->error = 'Не удалось обновить пост';
             foreach ($rsp['posts'] as $postResult) {
-                if ($postResult['adId'] == $operation->ad_id) {
+                if ($postResult['adId'] == $op->ad_id) {
                     if (isset($postResult['ok']) && $postResult['ok'] == 1) {
-                        $operation->status = ExportOperation::STATUS_DONE;
-                        $operation->error = null;
+                        $op->status = ExportOperation::STATUS_DONE;
+                        $op->error = null;
                     }
                 }
             }
         }
 
-        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_CARD) as $operation) {
-            $operation->status = ExportOperation::STATUS_FAILED;
-            $operation->error = 'Не удалось обновить карточку';
+        foreach ($uploadedImagesOperations->where('type', ExportOperation::TYPE_UPDATE_CARD) as $op) {
+            $op->status = ExportOperation::STATUS_FAILED;
+            $op->error = 'Не удалось обновить карточку';
             foreach ($rsp['cards'] as $cardResult) {
-                if ($cardResult['operationId'] == $operation->id && $cardResult['ok'] !== false) {
-                    $operation->status = ExportOperation::STATUS_DONE;
-                    $operation->error = null;
+                if ($cardResult['operationId'] == $op->id && $cardResult['ok'] !== false) {
+                    $op->status = ExportOperation::STATUS_DONE;
+                    $op->error = null;
                 }
             }
         }
@@ -356,6 +359,12 @@ class ApiClient
         }
         if (isset($newAd[AdsFeed::COL_AD_LINK_TITLE])) {
             $ad['link_title'] = $newAd[AdsFeed::COL_AD_LINK_TITLE];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_PHOTO])) {
+            $ad['photo'] = $operation->runtime['photo_upload'];
+        }
+        if (isset($newAd[AdsFeed::COL_AD_ICON])) {
+            $ad['photo_icon'] = $operation->runtime['icon_upload'];
         }
 
         return $ad;
@@ -573,6 +582,8 @@ class ApiClient
                 return $ad['id'];
             case AdsFeed::COL_AD_NAME:
                 return $ad['name'];
+            case AdsFeed::COL_AD_FORMAT:
+                return $ad['ad_format'];
             case AdsFeed::COL_AD_TITLE:
                 return $ad['layout']['title'] ?? null;
             case AdsFeed::COL_AD_LINK_URL:
@@ -581,6 +592,10 @@ class ApiClient
                 return $ad['layout']['description'] ?? null;
             case AdsFeed::COL_AD_LINK_TITLE:
                 return $ad['layout']['link_title'] ?? null;
+            case AdsFeed::COL_AD_PHOTO:
+                return $ad['layout']['image_src'] ?? null;
+            case AdsFeed::COL_AD_ICON:
+                return $ad['layout']['icon_src'] ?? null;
 
             case AdsFeed::COL_CAMPAIGN_ID:
                 return $ad['campaign_id'];
@@ -680,6 +695,84 @@ class ApiClient
         usort($sizes, fn ($a, $b) => $b['width'] <=> $a['width']);
 
         return $sizes[0]['url'] ?? null;
+    }
+
+    /**
+     * @see https://vk.com/dev/upload_photo_ads
+     * @param Collection $operations
+     * @return Collection
+     */
+    private function uploadImages(Collection $operations): Collection
+    {
+        /** @var ExportOperation $op */
+        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_AD) as $op) {
+            try {
+                $query = ['ad_format' => $op->state_from[AdsFeed::COL_AD_FORMAT]];
+                if (isset($op->state_to[AdsFeed::COL_AD_PHOTO])) {
+                    $op->runtime['photo_upload'] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_AD_PHOTO],
+                        $this->get('ads.getUploadURL', $query)
+                    );
+                }
+                if (isset($op->state_to[AdsFeed::COL_AD_ICON])) {
+                    $op->runtime['icon_upload'] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_AD_ICON],
+                        $this->get('ads.getUploadURL', $query + ['icon' => '1'])
+                    );
+                }
+            } catch (\Exception $e) {
+                $op->status = ExportOperation::STATUS_FAILED;
+                $op->error = $e->getMessage();
+            }
+        }
+
+        return $operations;
+    }
+
+    private function transferImage(string $urlFrom, string $urlTo)
+    {
+        $img = file_get_contents($urlFrom);
+        if ($img === false) {
+            throw new \Exception("Не удалось получить файл изображения ({$urlFrom})");
+        }
+
+        $ext = pathinfo($urlFrom)['extension'] ?? null;
+        if (is_null($ext)) {
+            throw new \Exception("Не удалось определить тип изображения ({$urlFrom})");
+        }
+        $filename = tempnam(sys_get_temp_dir(), 'asdark_img').'.'.$ext;
+        $written = file_put_contents($filename, $img);
+        if ($written === false) {
+            throw new \Exception("Не удалось загрузить файл изображения ({$urlFrom})");
+        }
+
+        $client = new Client(['timeout'  => 60.0]);
+        try {
+            $response = $client->post($urlTo, [
+                'multipart' => [
+                    [
+                        'name'         => 'file',
+                        'contents'     => fopen($filename, 'r'),
+                    ]
+                ]
+            ]);
+            $data = \json_decode($response->getBody()->getContents(), true);
+            if (!is_array($data)) {
+                throw new \Exception("Не удалось загрузить изображение в ВК ({$urlFrom}): ошибка ВК");
+            }
+            $err = $data['errcode'] ?? null;
+            if (!is_null($err)) {
+                throw new \Exception("Не удалось загрузить изображение в ВК ({$urlFrom}): ".json_encode($data));
+            }
+            $photo = $data['photo'] ?? null;
+            if (is_null($photo)) {
+                throw new \Exception("Не удалось загрузить изображение в ВК ({$urlFrom}): нет данных");
+            }
+
+            return $photo;
+        } finally {
+            unlink($filename);
+        }
     }
 
 }

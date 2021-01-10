@@ -59,6 +59,8 @@ class AdsFeed
     const COL_CARD_5_LINK_URL = 'card_5_link_url';
     const COL_CARD_5_OWNER_ID = 'card_5_owner_id';
     const COL_CARD_5_ID = 'card_5_id';
+    const COL_AD_PHOTO = 'ad_photo';
+    const COL_AD_ICON = 'ad_icon';
 
     const CARDS_ENTITIES = [
         'card1',
@@ -308,6 +310,16 @@ class AdsFeed
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'Список ID карточек карусели через запятую'
+        ],
+        self::COL_AD_PHOTO => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Основное изображение объявления'
+        ],
+        self::COL_AD_ICON => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Логотип объявления'
         ],
     ];
 

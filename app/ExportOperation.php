@@ -4,6 +4,18 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Операция атомарного изменения объявления или его части
+ *
+ * @property string $type
+ * @property integer $ad_id
+ * @property integer $export_id
+ * @property array $state_from
+ * @preperty array $state_to
+ * @property string $status
+ * @property string $error
+ * @property array $runtime
+ */
 class ExportOperation extends Model
 {
 
@@ -23,8 +35,15 @@ class ExportOperation extends Model
         'export_id',
         'state_from',
         'state_to',
-        'status'
+        'status',
+        'error'
     ];
+
+    /**
+     * Контейнер для временных данных времени выполнения
+     * @var array
+     */
+    public array $runtime = [];
 
     protected $casts = [
         'state_from' => 'array',

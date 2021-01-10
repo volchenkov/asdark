@@ -33,6 +33,9 @@
                     @foreach($op->state_to as $field => $newValue)
                         <strong>{{ $field }}{{ $loop->last ? '': ', ' }}</strong>
                     @endforeach
+                    @if($op->error)
+                        <span title="{{$op->error }}">&#10067;</span>
+                    @endif
                 </td>
             </tr>
         @endforeach

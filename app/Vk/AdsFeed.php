@@ -111,6 +111,16 @@ class AdsFeed
             'entity'   => 'ad',
             'desc'     => 'Ссылка на рекламируемый объект'
         ],
+        self::COL_AD_PHOTO => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Основное изображение объявления'
+        ],
+        self::COL_AD_ICON => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Логотип объявления'
+        ],
         self::COL_POST_TEXT                               => [
             'editable' => true,
             'entity'   => 'post',
@@ -310,16 +320,6 @@ class AdsFeed
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'Список ID карточек карусели через запятую'
-        ],
-        self::COL_AD_PHOTO => [
-            'editable' => true,
-            'entity'   => 'ad',
-            'desc'     => 'Основное изображение объявления'
-        ],
-        self::COL_AD_ICON => [
-            'editable' => true,
-            'entity'   => 'ad',
-            'desc'     => 'Логотип объявления'
         ],
     ];
 

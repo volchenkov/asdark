@@ -145,18 +145,6 @@ class ApiClient
         return $rows;
     }
 
-    public function execute(string $code, $captcha = null, $captchaKey = null)
-    {
-        $payload = ['code' => $code];
-
-        if ($captcha && $captchaKey) {
-            $payload['captcha_sid'] = $this->fetchCaptchaSid($captcha);
-            $payload['captcha_key'] = $captchaKey;
-        }
-
-        return $this->post('execute', $payload);
-    }
-
     /**
      * @param Collection $operations
      * @param string|null $captcha
@@ -247,6 +235,18 @@ class ApiClient
         $code .= 'return result;';
 
         return $code;
+    }
+
+    private function execute(string $code, $captcha = null, $captchaKey = null)
+    {
+        $payload = ['code' => $code];
+
+        if ($captcha && $captchaKey) {
+            $payload['captcha_sid'] = $this->fetchCaptchaSid($captcha);
+            $payload['captcha_key'] = $captchaKey;
+        }
+
+        return $this->post('execute', $payload);
     }
 
     /**

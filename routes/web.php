@@ -46,8 +46,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/exports_operations', 'ExportsController@operations')->name('export.operations');
     Route::get('/help', 'HelpController@index');
     Route::get('admin/exports', 'AdminController@exports');
-    Route::get('admin/vk_execute', 'AdminController@vkExecuteForm');
-    Route::post('admin/vk_execute', 'AdminController@vkExecuteRequest');
 
     Route::get('/logout', function () {
         Auth::logout();

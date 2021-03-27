@@ -107,6 +107,7 @@ class ExportPlannerTest extends TestCase
         $editedFieldsAd11 = [
             AdsFeed::COL_CARD_2_LINK_URL => "card_2_link_url_edited",
             AdsFeed::COL_CARD_3_TITLE    => "card_3_title_edited",
+            AdsFeed::COL_CARD_3_PHOTO    => "card_3_photo_edited",
         ];
 
         $editedStateAd13 = [
@@ -131,7 +132,10 @@ class ExportPlannerTest extends TestCase
                 'type'       => ExportOperation::TYPE_UPDATE_CARD,
                 'ad_id'      => 11,
                 'state_from' => $currentStateFeed[11],
-                'state_to'   => [AdsFeed::COL_CARD_3_TITLE => 'card_3_title_edited'],
+                'state_to'   => [
+                    AdsFeed::COL_CARD_3_TITLE => 'card_3_title_edited',
+                    AdsFeed::COL_CARD_3_PHOTO => 'card_3_photo_edited'
+                ],
                 'status'     => ExportOperation::STATUS_PENDING
             ]))
             ->push(new ExportOperation([

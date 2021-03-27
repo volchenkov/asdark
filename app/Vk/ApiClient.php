@@ -33,11 +33,6 @@ class ApiClient
         return $this;
     }
 
-    public function getClientId(): ?string
-    {
-        return $this->clientId;
-    }
-
     public function getCampaigns()
     {
         return $this->get('ads.getCampaigns');
@@ -51,11 +46,6 @@ class ApiClient
     public function getAds(array $campaignIds)
     {
         return $this->get('ads.getAds', ['campaign_ids' => json_encode($campaignIds)]);
-    }
-
-    public function getAdsTargeting(array $adIds): array
-    {
-        return $this->get('ads.getAdsTargeting', ['ad_ids' => json_encode($adIds)]);
     }
 
     public function getAdsLayout(array $adIds): array

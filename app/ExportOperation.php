@@ -29,6 +29,12 @@ class ExportOperation extends Model
     const TYPE_UPDATE_POST = 'update_post';
     const TYPE_UPDATE_CARD = 'update_card';
 
+    const RNT_CARD_1_PHOTO_UPLOAD = 'card_1_photo_upload';
+    const RNT_CARD_2_PHOTO_UPLOAD = 'card_2_photo_upload';
+    const RNT_CARD_3_PHOTO_UPLOAD = 'card_3_photo_upload';
+    const RNT_CARD_4_PHOTO_UPLOAD = 'card_4_photo_upload';
+    const RNT_CARD_5_PHOTO_UPLOAD = 'card_5_photo_upload';
+
     protected $fillable = [
         'type',
         'ad_id',

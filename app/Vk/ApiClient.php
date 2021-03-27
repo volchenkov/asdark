@@ -375,28 +375,33 @@ class ApiClient
         $new = $operation->state_to;
         $current = $operation->state_from;
 
-        $ownerId = $cardId = null;
+        $ownerId = $cardId = $cardNum = null;
         foreach (array_keys($new) as $field) {
             switch (AdsFeed::FIELDS[$field]['entity']) {
                 case 'card1':
                     $ownerId = $current[AdsFeed::COL_CARD_1_OWNER_ID];
                     $cardId = $current[AdsFeed::COL_CARD_1_ID];
+                    $cardNum = 1;
                     break;
                 case 'card2':
                     $ownerId = $current[AdsFeed::COL_CARD_2_OWNER_ID];
                     $cardId = $current[AdsFeed::COL_CARD_2_ID];
+                    $cardNum = 2;
                     break;
                 case 'card3':
                     $ownerId = $current[AdsFeed::COL_CARD_3_OWNER_ID];
                     $cardId = $current[AdsFeed::COL_CARD_3_ID];
+                    $cardNum = 3;
                     break;
                 case 'card4':
                     $ownerId = $current[AdsFeed::COL_CARD_4_OWNER_ID];
                     $cardId = $current[AdsFeed::COL_CARD_4_ID];
+                    $cardNum = 4;
                     break;
                 case 'card5':
                     $ownerId = $current[AdsFeed::COL_CARD_5_OWNER_ID];
                     $cardId = $current[AdsFeed::COL_CARD_5_ID];
+                    $cardNum = 5;
                     break;
             }
         }
@@ -408,6 +413,7 @@ class ApiClient
             'owner_id' => $ownerId,
             'card_id'  => $cardId
         ];
+
         $cardTitleFeedFields = [
             AdsFeed::COL_CARD_1_TITLE,
             AdsFeed::COL_CARD_2_TITLE,
@@ -415,10 +421,9 @@ class ApiClient
             AdsFeed::COL_CARD_4_TITLE,
             AdsFeed::COL_CARD_5_TITLE,
         ];
-        foreach ($cardTitleFeedFields as $cardTitleFeedField) {
-            if (isset($new[$cardTitleFeedField])) {
-                $card['title'] = $new[$cardTitleFeedField];
-            }
+        $titleField = $cardTitleFeedFields[$cardNum - 1];
+        if (isset($new[$titleField])) {
+            $card['title'] = $new[$titleField];
         }
 
         $cardLinkFeedFields = [
@@ -428,10 +433,21 @@ class ApiClient
             AdsFeed::COL_CARD_4_LINK_URL,
             AdsFeed::COL_CARD_5_LINK_URL,
         ];
-        foreach ($cardLinkFeedFields as $cardLinkFeedField) {
-            if (isset($new[$cardLinkFeedField])) {
-                $card['link'] = $new[$cardLinkFeedField];
-            }
+        $linkField = $cardLinkFeedFields[$cardNum - 1];
+        if (isset($new[$linkField])) {
+            $card['link'] = $new[$linkField];
+        }
+
+        $cardPhotoFeedFields = [
+            AdsFeed::COL_CARD_1_PHOTO => ExportOperation::RNT_CARD_1_PHOTO_UPLOAD,
+            AdsFeed::COL_CARD_2_PHOTO => ExportOperation::RNT_CARD_2_PHOTO_UPLOAD,
+            AdsFeed::COL_CARD_3_PHOTO => ExportOperation::RNT_CARD_3_PHOTO_UPLOAD,
+            AdsFeed::COL_CARD_4_PHOTO => ExportOperation::RNT_CARD_4_PHOTO_UPLOAD,
+            AdsFeed::COL_CARD_5_PHOTO => ExportOperation::RNT_CARD_5_PHOTO_UPLOAD,
+        ];
+        $photoField = array_keys($cardPhotoFeedFields)[$cardNum - 1];
+        if (isset($new[$photoField])) {
+            $card['photo'] = $operation->runtime[$cardPhotoFeedFields[$photoField]];
         }
 
         return $card;
@@ -633,6 +649,8 @@ class ApiClient
             case AdsFeed::COL_CARD_1_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
+            case AdsFeed::COL_CARD_1_PHOTO:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['photo'] ?? null;
 
             case AdsFeed::COL_CARD_2_TITLE:
                 return $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['title'] ?? null;
@@ -644,6 +662,8 @@ class ApiClient
             case AdsFeed::COL_CARD_2_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
+            case AdsFeed::COL_CARD_2_PHOTO:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][1]['photo'] ?? null;
 
             case AdsFeed::COL_CARD_3_TITLE:
                 return $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['title'] ?? null;
@@ -655,6 +675,8 @@ class ApiClient
             case AdsFeed::COL_CARD_3_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
+            case AdsFeed::COL_CARD_3_PHOTO:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][2]['photo'] ?? null;
 
             case AdsFeed::COL_CARD_4_TITLE:
                 return $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['title'] ?? null;
@@ -666,6 +688,8 @@ class ApiClient
             case AdsFeed::COL_CARD_4_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
+            case AdsFeed::COL_CARD_4_PHOTO:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][3]['photo'] ?? null;
 
             case AdsFeed::COL_CARD_5_TITLE:
                 return $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['title'] ?? null;
@@ -677,6 +701,9 @@ class ApiClient
             case AdsFeed::COL_CARD_5_ID:
                 $cardId = $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['card_id'] ?? null;
                 return $cardId ? explode('_', $cardId)[1] : null;
+            case AdsFeed::COL_CARD_5_PHOTO:
+                return $ad['post']['attachments'][0]['pretty_cards']['cards'][4]['photo'] ?? null;
+
             case AdsFeed::COL_POST_ATTACHMENT_CARDS:
                 $cards = $ad['post']['attachments'][0]['pretty_cards']['cards'] ?? [];
                 return $cards ? 'pretty_card'.implode(',pretty_card', array_column($cards, 'card_id')) : null;
@@ -718,6 +745,45 @@ class ApiClient
                     $op->runtime['icon_upload'] = $this->transferImage(
                         $op->state_to[AdsFeed::COL_AD_ICON],
                         $this->get('ads.getUploadURL', $query + ['icon' => '1'])
+                    );
+                }
+            } catch (\Exception $e) {
+                $op->status = ExportOperation::STATUS_FAILED;
+                $op->error = $e->getMessage();
+            }
+        }
+
+        /** @var ExportOperation $op */
+        foreach ($operations->where('type', ExportOperation::TYPE_UPDATE_CARD) as $op) {
+            try {
+                if (isset($op->state_to[AdsFeed::COL_CARD_1_PHOTO])) {
+                    $op->runtime[ExportOperation::RNT_CARD_1_PHOTO_UPLOAD] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_CARD_1_PHOTO],
+                        $this->get('prettyCards.getUploadURL')
+                    );
+                }
+                if (isset($op->state_to[AdsFeed::COL_CARD_2_PHOTO])) {
+                    $op->runtime[ExportOperation::RNT_CARD_2_PHOTO_UPLOAD] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_CARD_2_PHOTO],
+                        $this->get('prettyCards.getUploadURL')
+                    );
+                }
+                if (isset($op->state_to[AdsFeed::COL_CARD_3_PHOTO])) {
+                    $op->runtime[ExportOperation::RNT_CARD_3_PHOTO_UPLOAD] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_CARD_3_PHOTO],
+                        $this->get('prettyCards.getUploadURL')
+                    );
+                }
+                if (isset($op->state_to[AdsFeed::COL_CARD_4_PHOTO])) {
+                    $op->runtime[ExportOperation::RNT_CARD_4_PHOTO_UPLOAD] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_CARD_4_PHOTO],
+                        $this->get('prettyCards.getUploadURL')
+                    );
+                }
+                if (isset($op->state_to[AdsFeed::COL_CARD_5_PHOTO])) {
+                    $op->runtime[ExportOperation::RNT_CARD_5_PHOTO_UPLOAD] = $this->transferImage(
+                        $op->state_to[AdsFeed::COL_CARD_5_PHOTO],
+                        $this->get('prettyCards.getUploadURL')
                     );
                 }
             } catch (\Exception $e) {

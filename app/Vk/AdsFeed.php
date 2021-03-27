@@ -43,22 +43,27 @@ class AdsFeed
     const COL_CARD_1_LINK_URL = 'card_1_link_url';
     const COL_CARD_1_OWNER_ID = 'card_1_owner_id';
     const COL_CARD_1_ID = 'card_1_id';
+    const COL_CARD_1_PHOTO = 'card_1_photo';
     const COL_CARD_2_TITLE = 'card_2_title';
     const COL_CARD_2_LINK_URL = 'card_2_link_url';
     const COL_CARD_2_OWNER_ID = 'card_2_owner_id';
     const COL_CARD_2_ID = 'card_2_id';
+    const COL_CARD_2_PHOTO = 'card_2_photo';
     const COL_CARD_3_TITLE = 'card_3_title';
     const COL_CARD_3_LINK_URL = 'card_3_link_url';
     const COL_CARD_3_OWNER_ID = 'card_3_owner_id';
     const COL_CARD_3_ID = 'card_3_id';
+    const COL_CARD_3_PHOTO = 'card_3_photo';
     const COL_CARD_4_TITLE = 'card_4_title';
     const COL_CARD_4_LINK_URL = 'card_4_link_url';
     const COL_CARD_4_OWNER_ID = 'card_4_owner_id';
     const COL_CARD_4_ID = 'card_4_id';
+    const COL_CARD_4_PHOTO = 'card_4_photo';
     const COL_CARD_5_TITLE = 'card_5_title';
     const COL_CARD_5_LINK_URL = 'card_5_link_url';
     const COL_CARD_5_OWNER_ID = 'card_5_owner_id';
     const COL_CARD_5_ID = 'card_5_id';
+    const COL_CARD_5_PHOTO = 'card_5_photo';
     const COL_AD_PHOTO = 'ad_photo';
     const COL_AD_ICON = 'ad_icon';
 
@@ -76,7 +81,7 @@ class AdsFeed
             'entity'   => 'campaign',
             'desc'     => 'ID кампании'
         ],
-        self::COL_CAMPAIGN_NAME   => [
+        self::COL_CAMPAIGN_NAME         => [
             'editable' => false,
             'entity'   => 'campaign',
             'desc'     => 'Имя кампании'
@@ -231,10 +236,15 @@ class AdsFeed
             'entity'   => 'card1',
             'desc'     => 'ID владельца первой карточки карусели'
         ],
-        self::COL_CARD_1_ID => [
+        self::COL_CARD_1_ID       => [
             'editable' => false,
             'entity'   => 'card1',
             'desc'     => 'ID первой карточки карусели'
+        ],
+        self::COL_CARD_1_PHOTO    => [
+            'editable' => true,
+            'entity'   => 'card1',
+            'desc'     => 'Картинка первой карточки карусели'
         ],
         self::COL_CARD_2_TITLE    => [
             'editable' => true,
@@ -251,10 +261,15 @@ class AdsFeed
             'entity'   => 'card2',
             'desc'     => 'ID владельца второй карточки карусели'
         ],
-        self::COL_CARD_2_ID => [
+        self::COL_CARD_2_ID       => [
             'editable' => false,
             'entity'   => 'card2',
-            'desc'     => 'ID первой второй карусели'
+            'desc'     => 'ID второй карточки карусели'
+        ],
+        self::COL_CARD_2_PHOTO    => [
+            'editable' => true,
+            'entity'   => 'card2',
+            'desc'     => 'Картинка второй карточки карусели'
         ],
         self::COL_CARD_3_TITLE    => [
             'editable' => true,
@@ -271,10 +286,15 @@ class AdsFeed
             'entity'   => 'card3',
             'desc'     => 'ID владельца третьей карточки карусели'
         ],
-        self::COL_CARD_3_ID => [
+        self::COL_CARD_3_ID       => [
             'editable' => false,
             'entity'   => 'card3',
-            'desc'     => 'ID первой третьей карусели'
+            'desc'     => 'ID третьей карточки карусели'
+        ],
+        self::COL_CARD_3_PHOTO    => [
+            'editable' => true,
+            'entity'   => 'card3',
+            'desc'     => 'Картинка третьей карточки карусели'
         ],
         self::COL_CARD_4_TITLE    => [
             'editable' => true,
@@ -291,10 +311,15 @@ class AdsFeed
             'entity'   => 'card4',
             'desc'     => 'ID владельца четвертой карточки карусели'
         ],
-        self::COL_CARD_4_ID => [
+        self::COL_CARD_4_ID       => [
             'editable' => false,
             'entity'   => 'card4',
-            'desc'     => 'ID первой четвертой карусели'
+            'desc'     => 'ID четвертой карточки карусели'
+        ],
+        self::COL_CARD_4_PHOTO    => [
+            'editable' => true,
+            'entity'   => 'card4',
+            'desc'     => 'Картинка четвертой карточки карусели'
         ],
         self::COL_CARD_5_TITLE    => [
             'editable' => true,
@@ -306,15 +331,20 @@ class AdsFeed
             'entity'   => 'card5',
             'desc'     => 'Ссылка пятой карточки карусели'
         ],
-        self::COL_CARD_5_OWNER_ID => [
+        self::COL_CARD_5_OWNER_ID       => [
             'editable' => false,
             'entity'   => 'card5',
             'desc'     => 'ID владельца пятой карточки карусели'
         ],
-        self::COL_CARD_5_ID => [
+        self::COL_CARD_5_ID             => [
             'editable' => false,
             'entity'   => 'card5',
-            'desc'     => 'ID первой пятой карусели'
+            'desc'     => 'ID пятой карточки карусели'
+        ],
+        self::COL_CARD_5_PHOTO          => [
+            'editable' => true,
+            'entity'   => 'card5',
+            'desc'     => 'Картинка пятой карточки карусели'
         ],
         self::COL_POST_ATTACHMENT_CARDS => [
             'editable' => false,
@@ -335,10 +365,9 @@ class AdsFeed
 
     public static function getEditableFields(string $entity = null): array
     {
-        return array_filter(
-            $entity ? self::getEntityFields($entity) : self::FIELDS,
-            fn ($field) => $field['editable']
-        );
+        $fields = $entity ? self::getEntityFields($entity) : self::FIELDS;
+
+        return array_filter($fields, fn ($field) => $field['editable']);
     }
 
 }

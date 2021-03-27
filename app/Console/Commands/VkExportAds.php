@@ -72,7 +72,6 @@ class VkExportAds extends Command
             $export->status = Export::STATUS_PROCESSING;
             $export->save();
 
-            $this->logger->info('Выполнение началось');
             $feed = $this->getFeed($export->sid);
 
             $status = Export::STATUS_DONE;

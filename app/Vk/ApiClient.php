@@ -356,6 +356,9 @@ class ApiClient
         if (isset($newAd[AdsFeed::COL_AD_ICON])) {
             $ad['photo_icon'] = $operation->runtime['icon_upload'];
         }
+        if (isset($newAd[AdsFeed::COL_STATS_URL])) {
+            $ad['stats_url'] = $newAd[AdsFeed::COL_STATS_URL];
+        }
 
         return $ad;
     }
@@ -699,6 +702,8 @@ class ApiClient
                 return $cards ? 'pretty_card'.implode(',pretty_card', array_column($cards, 'card_id')) : null;
             case AdsFeed::COL_CLIENT_ID:
                 return $this->clientId;
+            case AdsFeed::COL_STATS_URL:
+                return $ad['layout']['stats_url'] ?? null;
             default:
                 return null;
         }

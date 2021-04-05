@@ -66,6 +66,7 @@ class AdsFeed
     const COL_CARD_5_PHOTO = 'card_5_photo';
     const COL_AD_PHOTO = 'ad_photo';
     const COL_AD_ICON = 'ad_icon';
+    const COL_STATS_URL = 'ad_stats_url';
 
     const CARDS_ENTITIES = [
         'card1',
@@ -350,6 +351,11 @@ class AdsFeed
             'editable' => false,
             'entity'   => 'post',
             'desc'     => 'Список ID карточек карусели через запятую'
+        ],
+        self::COL_STATS_URL => [
+            'editable' => true,
+            'entity'   => 'ad',
+            'desc'     => 'Пиксель внешней статистики'
         ],
     ];
 

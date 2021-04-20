@@ -21,4 +21,9 @@ class Connection extends Model
         return $this->data['account_type'] === "agency";
     }
 
+    public function getAccountId()
+    {
+        return $this->data['account_id'];
+    }
+
 }

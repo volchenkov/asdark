@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Vk\AdsDownloader;
 use App\Vk\ApiClient as VkApiClient;
 use App\Vk\AdsFeed;
 use App\Google\ApiClient as GoogleApiClient;
@@ -17,7 +18,7 @@ class AdsEditController extends BaseController
         $clientId = $request->input('client_id');
         $campaigns = $vk
             ->setClientId($clientId)
-            ->getCampaigns();
+            ->get('ads.getCampaigns');
 
         return $campaigns;
     }
@@ -44,7 +45,7 @@ class AdsEditController extends BaseController
 
         $vk->setClientId($clientId);
 
-        $ads = $vk->getAds($campaignIds);
+        $ads = $vk->get('ads.getAds', ['campaign_ids' => json_encode($campaignIds)]);
 
         $fields = [
             AdsFeed::COL_CAMPAIGN_ID,
@@ -56,7 +57,8 @@ class AdsEditController extends BaseController
         }
 
         $fields = array_merge($fields, array_keys(AdsFeed::getEditableFields()));
-        $feed = $vk->getFeed(array_column($ads, 'id'), $fields);
+
+        $feed = (new AdsDownloader($vk))->getFeed(array_column($ads, 'id'), $fields);
 
         usort($feed, fn ($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 

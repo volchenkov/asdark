@@ -63,7 +63,7 @@ class VkOauthController extends BaseController
 
         try {
             $vk = new ApiClient();
-            $accounts = $vk->getAccounts();
+            $accounts = $vk->get('ads.getAccounts');
         } catch (\Exception $e) {
             return view('vk-auth-token-failed', ['message' => $e->getMessage()]);
         }

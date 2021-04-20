@@ -6,6 +6,8 @@ use App\Export;
 use App\ExportLogger;
 use App\ExportOperation;
 use App\ExportPlanner;
+use App\Vk\AdsDownloader;
+use App\Vk\AdsUploader;
 use App\Vk\CaptchaException;
 use Illuminate\Console\Command;
 use \App\Vk\ApiClient as VkApiClient;
@@ -35,6 +37,8 @@ class VkExportAds extends Command
     private VkApiClient $vk;
     private ExportLogger $logger;
     private ExportPlanner $planner;
+    private AdsUploader $adsUploader;
+    private AdsDownloader $adsDownloader;
 
     /**
      * Ограничения API:
@@ -53,6 +57,8 @@ class VkExportAds extends Command
         $this->google = $google;
         $this->vk = $vk;
         $this->planner = $planner;
+        $this->adsUploader = new AdsUploader($vk);
+        $this->adsDownloader = new AdsDownloader($vk);
 
         parent::__construct();
     }
@@ -167,7 +173,8 @@ class VkExportAds extends Command
                     $operation->status = ExportOperation::STATUS_PROCESSING;
                     $operation->save();
                 }
-                $this->vk->batchUpdate($chunk, $captcha, $captchaCode);
+
+                $this->adsUploader->batchUpdate($chunk, $captcha, $captchaCode);
                 foreach ($chunk as $operation) {
                     $operation->save();
                 }
@@ -195,7 +202,7 @@ class VkExportAds extends Command
     private function plan(array $feed, int $exportId): Collection
     {
         $adIds = array_column($feed, AdsFeed::COL_AD_ID);
-        $currentStateFeed = $this->vk->getFeed($adIds, array_keys(AdsFeed::FIELDS));
+        $currentStateFeed = $this->adsDownloader->getFeed($adIds, array_keys(AdsFeed::FIELDS));
 
         $operations = $this->planner->plan($currentStateFeed, $feed);
         foreach ($operations as $operation) {

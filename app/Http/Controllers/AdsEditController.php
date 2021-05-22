@@ -38,45 +38,35 @@ class AdsEditController extends BaseController
         return view('ads-edit-form', ['clients' => $clients]);
     }
 
-    public function generate(Request $request, VkApiClient $vk, GoogleApiClient $google)
+    public function generate(Request $request, GoogleApiClient $google, AdsDownloader $adsDownloader)
     {
         $campaignIds = explode(',', $request->input('campaign_ids', ''));
         $clientId = $request->input('client_id') ?: null;
-
-        $vk->setClientId($clientId);
-
-        $ads = $vk->get('ads.getAds', ['campaign_ids' => json_encode($campaignIds)]);
 
         $fields = [
             AdsFeed::COL_CAMPAIGN_ID,
             AdsFeed::COL_CAMPAIGN_NAME,
             AdsFeed::COL_AD_ID
         ];
+        $fields = array_merge($fields, array_keys(AdsFeed::getEditableFields()));
         if ($clientId) {
             array_unshift($fields, AdsFeed::COL_CLIENT_ID);
         }
 
-        $fields = array_merge($fields, array_keys(AdsFeed::getEditableFields()));
-
-        $feed = (new AdsDownloader($vk))->getFeed(array_column($ads, 'id'), $fields);
-
+        $feed = $adsDownloader->getFeed($clientId, $fields, ['campaign_ids' => $campaignIds]);
         usort($feed, fn ($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
 
         $headers = array_keys(array_values($feed)[0]);
         $rows = array_map('array_values', $feed);
         array_unshift($rows, $headers);
 
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-
-        $spreadsheet = $google->createSpreadSheet(
-            "asdark - редактирование объявлений ВК {$now}",
-            $rows,
-            new \Google_Service_Drive_Permission([
-                'role'         => 'writer',
-                'type'         => 'user',
-                'emailAddress' => Auth::user()->email
-            ])
-        );
+        $sheetTitle = "asdark - редактирование объявлений ВК ".(new \DateTime())->format('Y-m-d H:i:s');
+        $sheetPermission = new \Google_Service_Drive_Permission([
+            'role'         => 'writer',
+            'type'         => 'user',
+            'emailAddress' => Auth::user()->email
+        ]);
+        $spreadsheet = $google->createSpreadSheet($sheetTitle, $rows, $sheetPermission);
 
         return $spreadsheet->getSpreadsheetId();
     }

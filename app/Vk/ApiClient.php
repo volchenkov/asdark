@@ -67,7 +67,8 @@ class ApiClient
 
     public function get(string $method, array $queryParams = [])
     {
-        $rsp = $this->api()->get($method, ['query' => $this->addDefaultParams($queryParams)]);
+        $query = $this->addDefaultParams($queryParams);
+        $rsp = $this->api()->get($method, ['query' => $query]);
 
         $data = \json_decode($rsp->getBody()->getContents(), true);
 
@@ -89,7 +90,7 @@ class ApiClient
             throw new \RuntimeException("Failed to decode response: {$method}" . (string)$rsp->getBody());
         }
 
-        sleep(1);
+        sleep(1); // anti flood
 
         return $data['response'];
     }
@@ -134,8 +135,8 @@ class ApiClient
             'v'            => self::VERSION
         ];
 
-        if (isset($conn->data['account_id'])) {
-            $defaults['account_id'] = $conn->data['account_id'];
+        if ($conn->hasAccountId()) {
+            $defaults['account_id'] = $conn->getAccountId();
         }
 
         if ($this->clientId) {

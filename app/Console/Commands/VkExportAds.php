@@ -84,8 +84,6 @@ class VkExportAds extends Command
             if (count($feed) == 0) {
                 $this->logger->info('Файл загрузки пуст');
             } else {
-                $this->vk->setClientId($feed[0][AdsFeed::COL_CLIENT_ID] ?? null);
-
                 /** @var Collection $operations */
                 $operations = ExportOperation::where('export_id', $export->id)
                     ->where('status', '!=', ExportOperation::STATUS_DONE)
@@ -201,8 +199,9 @@ class VkExportAds extends Command
 
     private function plan(array $feed, int $exportId): Collection
     {
+        $clientId = $feed[0][AdsFeed::COL_CLIENT_ID] ?? null;
         $adIds = array_column($feed, AdsFeed::COL_AD_ID);
-        $currentStateFeed = $this->adsDownloader->getFeed($adIds, array_keys(AdsFeed::FIELDS));
+        $currentStateFeed = $this->adsDownloader->getFeed($clientId, array_keys(AdsFeed::FIELDS), ['ad_ids' => $adIds]);
 
         $operations = $this->planner->plan($currentStateFeed, $feed);
         foreach ($operations as $operation) {

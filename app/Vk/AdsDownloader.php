@@ -15,22 +15,28 @@ class AdsDownloader
         $this->vk = $vkApiClient;
     }
 
-    public function getFeed(array $adIds, array $fields): array
+    public function getFeed(?int $clientId, array $fields, array $filter): array
     {
-        $adIds = array_unique($adIds);
+        $this->vk->setClientId($clientId);
+
+        $filterKey = array_keys($filter)[0]; // campaign_ids | ad_ids
+        $filterIds = array_unique($filter[$filterKey]);
+
         $ads = [];
 
         // предупредить 414 ответ из-за превышения допустимого размера запроса. Эмпирически ~200 id проходит
-        foreach (array_chunk($adIds, 200) as $adIdsChunk) {
-            $adsChunk = $this->vk->get('ads.getAds', ['ad_ids' => json_encode($adIdsChunk)]);
+        foreach (array_chunk($filterIds, 200) as $idsChunk) {
+            $adsChunk = $this->vk->get('ads.getAds', [$filterKey => json_encode($idsChunk)]);
             foreach ($adsChunk as $ad) {
                 $ads[$ad['id']] = $ad;
             }
-            if ($adsChunk) {
-                $layouts = $this->vk->get('ads.getAdsLayout', ['ad_ids' => json_encode($adIdsChunk)]);
-                foreach ($layouts as $layout) {
-                    $ads[$layout['id']]['layout'] = $layout;
-                }
+        }
+
+        // предупредить 414 ответ из-за превышения допустимого размера запроса. Эмпирически ~200 id проходит
+        foreach (array_chunk(array_keys($ads), 200) as $adIdsChunk) {
+            $layouts = $this->vk->get('ads.getAdsLayout', ['ad_ids' => json_encode($adIdsChunk)]);
+            foreach ($layouts as $layout) {
+                $ads[$layout['id']]['layout'] = $layout;
             }
         }
 

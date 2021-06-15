@@ -54,19 +54,25 @@
 
     <div class="col-12">
         @if(in_array($export['status'], [\App\Export::STATUS_FAILED, \App\Export::STATUS_PARTIAL_FAILURE]))
-            <a href="{{ route('export.rerun', ['id' => $export['id']]) }}" class="btn btn-primary btn-sm mr-1 mt-3" role="button">
+            <a href="{{ route('export.rerun', ['id' => $export['id']]) }}"
+               class="btn btn-primary btn-sm me-1 mt-3"
+               role="button">
                 повторить загрузку
             </a>
         @endif
 
         @if(in_array($export['status'], [\App\Export::STATUS_INTERRUPTED]))
-            <a href="{{ route('export.captcha', ['export_id' => $export['id']]) }}" class="btn btn-success btn-sm mr-1 mt-3" role="button">
+            <a href="{{ route('export.captcha', ['export_id' => $export['id']]) }}"
+               class="btn btn-success btn-sm me-1 mt-3"
+               role="button">
                 ввести капчу
             </a>
         @endif
 
         @if(in_array($export['status'], [\App\Export::STATUS_PENDING]))
-            <a href="{{ route('export.cancel', ['id' => $export['id']]) }}" class="btn btn-secondary btn-sm mr-1 mt-3" role="button">
+            <a href="{{ route('export.cancel', ['id' => $export['id']]) }}"
+               class="btn btn-secondary btn-sm me-1 mt-3"
+               role="button">
                 отменить загрузку
             </a>
         @endif

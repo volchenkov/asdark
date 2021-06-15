@@ -14,7 +14,7 @@
         <div>
             <span class="text-muted small"
                   title="Время события {{ $log->created_at->addHours(3) }}">{{ $log->created_at->addHours(3)->format('H:i:s') }}</span>
-            <span class="{{ $logClasses[$log->level] }} ml-2">{{ $log->message }}</span>
+            <span class="{{ $logClasses[$log->level] }} ms-2">{{ $log->message }}</span>
         </div>
     @endforeach
 

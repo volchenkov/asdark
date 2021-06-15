@@ -5,18 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>ASDARK</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
 
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
-            integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
-            crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
-            crossorigin="anonymous"></script>
+    <!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 
@@ -25,6 +17,7 @@
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 
     <link rel="stylesheet" type="text/css" href="{{ asset('/css/styles.css') }}" />
 
@@ -67,7 +60,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="navbar-collapse collapse" id="navbarTop" style="">
-            <ul class="navbar-nav mr-auto">
+            <ul class="navbar-nav me-auto">
                 <a href="/" class="navbar-brand"> <strong>ASDARK</strong></a>
                 <li class="nav-item">
                     <a href="{{ route('adsEdit.start') }}"
@@ -79,7 +72,7 @@
                 </li>
             </ul>
 
-            <ul class="navbar-nav ml-md-auto">
+            <ul class="navbar-nav ms-md-auto">
                 <li class="nav-item">
                     <a href="/logout" class="nav-link">выход</a>
                 </li>
@@ -94,7 +87,7 @@
 <footer class="footer bg-light">
     <div class="container">
         <a href="/help"
-           class="mr-3 text-muted {{ (request()->is('help*')) ? 'text-underlined' : '' }}">справка</a>
+           class="me-3 text-muted {{ (request()->is('help*')) ? 'text-underlined' : '' }}">справка</a>
         <a href="/vk_auth_current_state"
            class="text-muted {{ (request()->is('vk_auth*')) ? 'text-underlined' : '' }}">подключение ВК</a>
     </div>

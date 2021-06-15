@@ -7,8 +7,8 @@
          data-delay="5000"
          style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
         <div class="toast-header bg-success text-light">
-            <strong class="mr-auto">Успешно</strong>
-            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+            <strong class="me-auto">Успешно</strong>
+            <button type="button" class="ms-2 mb-1 close" data-dismiss="toast" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>

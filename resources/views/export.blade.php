@@ -20,8 +20,12 @@
 
 <div class="row mb-2">
     <div class="col-md-3">
-        <div class="small text-muted">Статус</div>
-        <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
+        <div class="small text-muted">Автор</div>
+        {{ $export['user']->name }}
+    </div>
+    <div class="col-md-3">
+        <div class="small text-muted">Клиент</div>
+        {{ $export['client_name'] ?: 'Клиент по умолчанию' }}
     </div>
     <div class="col-md-6">
         <div class="small text-muted">Таблица</div>
@@ -30,19 +34,19 @@
 </div>
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="small text-muted">Автор</div>
-        {{ $export['user']->name }}
+        <div class="small text-muted">Статус</div>
+        <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="small text-muted">Создана</div>
         {{ $export['created_at']->addHours(3) }}
     </div>
-    <div class="col-md-2">
+    <div class="col-md-3">
         <div class="small text-muted">Обновлена</div>
         {{ $export['updated_at']->addHours(3) }}
     </div>
     @if($export['captcha_code'])
-        <div class="col-md-2">
+        <div class="col-3">
             <div class="small text-muted">Капча</div>
             {{ $export['captcha_code'] }}
         </div>

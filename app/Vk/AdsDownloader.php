@@ -205,8 +205,6 @@ class AdsDownloader
             case AdsFeed::COL_POST_ATTACHMENT_CARDS:
                 $cards = $ad['post']['attachments'][0]['pretty_cards']['cards'] ?? [];
                 return $cards ? 'pretty_card'.implode(',pretty_card', array_column($cards, 'card_id')) : null;
-            case AdsFeed::COL_CLIENT_ID:
-                return $this->vk->getClientId();
             case AdsFeed::COL_STATS_URL:
                 return $ad['layout']['stats_url'] ?? null;
             default:

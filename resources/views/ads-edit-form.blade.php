@@ -12,7 +12,6 @@
                       @input="fetchCampaigns"
                       placeholder="Выберите клиента"
                       :disabled="sid !== null || loadingFeed"
-                      :reduce="client => client.id"
                       v-model="selectedClient">
 
                 <template #no-options="{ search, searching, loading }">
@@ -97,6 +96,9 @@
             <form action="{{ route('export.start') }}" method="POST">
                 @csrf
                 <input type="hidden" name="spreadsheetId" :value="sid">
+                <input type="hidden" name="clientId" :value="selectedClient.id">
+                <input type="hidden" name="clientName" :value="selectedClient.name">
+
                 <button class="btn btn-primary" type="submit">загрузить в ВК</button>
                 <button class="btn btn-light" type="reset" @click="sid = null">назад</button>
             </form>
@@ -122,7 +124,7 @@
                 this.loadingFeedError = false;
 
                 let url = addQueryParams('/ads_edit_generate', {
-                    client_id: this.selectedClient,
+                    client_id: this.selectedClient.id,
                     campaign_ids: this.selectedCampaigns.join(',')
                 });
                 fetch(url)
@@ -145,17 +147,17 @@
                         this.loadingFeed = false;
                     });
             },
-            fetchCampaigns(clientId) {
+            fetchCampaigns(client) {
                 this.campaigns = [];
                 this.selectedCampaigns = [];
                 this.campaignsLoaded = false;
                 this.campaignsLoadingError = false;
-                if (clientId === null) {
+                if (client === null) {
                     return;
                 }
                 this.loading = true;
 
-                fetch(addQueryParams('/ads_edit_get_campaigns', {client_id: clientId}))
+                fetch(addQueryParams('/ads_edit_get_campaigns', {client_id: client.id}))
                     .then(response => {
                         if (response.ok) {
                             response.json()

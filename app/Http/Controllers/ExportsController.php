@@ -81,6 +81,11 @@ class ExportsController extends BaseController
         $export->status = Export::STATUS_PENDING;
         $export->user_id = Auth::user()->id;
 
+        if ($clientId = $request->input('clientId')) {
+            $export->client_id = $clientId;
+            $export->client_name = $request->input('clientName');
+        }
+
         $export->saveOrFail();
 
         $request->session()->flash('msg', "Загрузка запланирована, номер #{$export->id}");

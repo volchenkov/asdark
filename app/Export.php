@@ -4,6 +4,16 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class Export
+ * @package App
+ * @property int id
+ * @property string sid
+ * @property int client_id
+ * @property string client_name
+ * @property string status
+ * @property int user_id
+ */
 class Export extends Model
 {
 

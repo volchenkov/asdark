@@ -9,8 +9,6 @@ namespace App\Vk;
 class AdsFeed
 {
 
-    const COL_CLIENT_ID = 'client_id';
-
     const COL_CAMPAIGN_ID = 'campaign_id';
     const COL_CAMPAIGN_NAME = 'campaign_name';
     const COL_AD_ID = 'ad_id';

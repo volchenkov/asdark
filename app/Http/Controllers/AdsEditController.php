@@ -49,9 +49,6 @@ class AdsEditController extends BaseController
             AdsFeed::COL_AD_ID
         ];
         $fields = array_merge($fields, array_keys(AdsFeed::getEditableFields()));
-        if ($clientId) {
-            array_unshift($fields, AdsFeed::COL_CLIENT_ID);
-        }
 
         $feed = $adsDownloader->getFeed($clientId, $fields, ['campaign_ids' => $campaignIds]);
         usort($feed, fn ($a, $b) => $a[AdsFeed::COL_CAMPAIGN_ID] <=> $b[AdsFeed::COL_CAMPAIGN_ID]);
@@ -60,7 +57,7 @@ class AdsEditController extends BaseController
         $rows = array_map('array_values', $feed);
         array_unshift($rows, $headers);
 
-        $sheetTitle = "asdark - редактирование объявлений ВК ".(new \DateTime())->format('Y-m-d H:i:s');
+        $sheetTitle = "asdark - клиент ".($clientId ?: 'по умолчанию ').(new \DateTime())->format('Y-m-d H:i:s');
         $sheetPermission = new \Google_Service_Drive_Permission([
             'role'         => 'writer',
             'type'         => 'user',

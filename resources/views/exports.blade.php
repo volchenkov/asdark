@@ -9,7 +9,7 @@
             <thead>
             <tr>
                 <th scope="col">Создана</th>
-                <th scope="col">Таблица объявлений</th>
+                <th scope="col">Клиент</th>
                 <th scope="col">Статус</th>
                 <th scope="col"></th>
             </tr>
@@ -21,11 +21,7 @@
                     {{ $export['created_at']->addHours(3)->format('H:i:s') }}
                     <div class="small text-muted">{{ $export['created_at']->format('Y-m-d') }}</div>
                 </td>
-                <td>
-                    <div>
-                        <a href="https://docs.google.com/spreadsheets/d/{{ $export['sid'] }}" target="_blank">{{ $export['sid'] }}</a>
-                    </div>
-                </td>
+                <td>{{ $export['client_name'] ?: 'Клиент по умолчанию' }}</td>
                 <td title="{{ $export['updated_at'] ? 'Обновлена '.$export['updated_at']->addHours(3) : ''  }}">
                     @php
                         $statuses = [

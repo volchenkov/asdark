@@ -92,7 +92,7 @@ class VkExportAds extends Command
                 $hasPlan = $operations->count() > 0;
                 if (!$hasPlan) {
                     $this->logger->info('Составляется план загрузки');
-                    $operations = $this->plan($feed, $export->id);
+                    $operations = $this->plan($feed, $export);
                 }
 
                 if ($operations->count() == 0) {
@@ -197,15 +197,14 @@ class VkExportAds extends Command
         }
     }
 
-    private function plan(array $feed, int $exportId): Collection
+    private function plan(array $feed, Export $export): Collection
     {
-        $clientId = $feed[0][AdsFeed::COL_CLIENT_ID] ?? null;
         $adIds = array_column($feed, AdsFeed::COL_AD_ID);
-        $currentStateFeed = $this->adsDownloader->getFeed($clientId, array_keys(AdsFeed::FIELDS), ['ad_ids' => $adIds]);
+        $currentStateFeed = $this->adsDownloader->getFeed($export->client_id, array_keys(AdsFeed::FIELDS), ['ad_ids' => $adIds]);
 
         $operations = $this->planner->plan($currentStateFeed, $feed);
         foreach ($operations as $operation) {
-            $operation->export_id = $exportId;
+            $operation->export_id = $export->id;
             $operation->save();
         }
 

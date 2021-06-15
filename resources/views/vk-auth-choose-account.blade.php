@@ -6,8 +6,8 @@
         <form action="/vk_auth_save" method="POST">
             @csrf
             <input type="hidden" name="accounts" value="{{ json_encode($accounts) }}">
-            <div class="row">
-                <div class="col-md-8 form-group">
+            <div class="row mb-2">
+                <div class="col-md-8">
                     <label for="account_id">Для продолжения выберите рекламный кабинет:</label>
                     <select class="form-control"
                             name="account_id"

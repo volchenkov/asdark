@@ -18,7 +18,7 @@
     @csrf
     <input type="hidden" name="spreadsheetId" value="{{ $spreadsheetId }}">
     <div class="row my-4">
-        <div class="col-2 form-group">
+        <div class="col-2">
             <input class="btn btn-primary"
                    value="начать загрузку в ВК"
                    type="submit"/>

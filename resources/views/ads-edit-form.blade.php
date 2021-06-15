@@ -2,8 +2,9 @@
 
 @section('content')
 <div id="app">
-    <div class="row">
-        <div class="col-md-8 form-group">
+
+    <div class="row mb-2">
+        <div class="col-md-6">
             <p>Ознакомьтесь с <a href="/help?q=caveats" target="_blank">ограничениями редактирования</a> и <a href="/help?q=editable-fields" target="_blank">списком редактируемых полей</a></p>
 
             <div class="alert alert-warning">
@@ -30,16 +31,18 @@
                 </template>
             </v-select>
         </div>
+    </div>
 
-        <div class="col-md-8 form-group" v-if="loading">
-            <div class="text-center my-3" >
+    <div class="row mb-2">
+        <div class="col-md-6" v-if="loading">
+            <div class="text-center my-2">
                 <div class="spinner-border text-secondary" role="status">
                     <span class="visually-hidden">Загрузка кампаний...</span>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-8 form-group" v-if="campaignsLoaded && !loading">
+        <div class="col-md-6" v-if="campaignsLoaded && !loading">
             <p v-if="campaigns.length == 0">Кампании клиента не найдены</p>
             <v-select :options="campaigns"
                       label="name"
@@ -58,7 +61,7 @@
                 </template>
             </v-select>
         </div>
-        <div class="col-md-8 form-group text-danger" v-if="campaignsLoadingError && !loading">
+        <div class="col-md-6 text-danger" v-if="campaignsLoadingError && !loading">
             <div class="alert alert-warning">
                 <div><strong>Не удалось загрузить кампании клиента 😞 </strong></div>
                 <div>Попробуйте снова, если это не впервые - обратитесь к администратору.</div>
@@ -67,7 +70,7 @@
     </div>
 
     <div class="row" v-if="loadingFeedError && !loading">
-        <div class="col-md-8 form-group text-danger">
+        <div class="col-md-6 text-danger">
             <div class="alert alert-warning">
                 <div><strong>Не удалось создать таблицу с объявлениями 😞 </strong></div>
                 <div>Попробуйте снова, если это не впервые - обратитесь к администратору.</div>
@@ -76,7 +79,7 @@
     </div>
 
     <div class="row mb-5" v-if="campaignsLoaded && campaigns.length > 0 && !(loadingFeed || sid) && !loading">
-        <div class="col-md-8">
+        <div class="col-md-6">
             <button class="btn btn-primary"
                     :disabled="!selectedCampaigns || selectedCampaigns.length == 0"
                     @click="generateFeed"
@@ -84,8 +87,7 @@
         </div>
     </div>
 
-
-    <div class="col-md-8 form-group" v-if="loadingFeed && !loading">
+    <div class="col-md-6" v-if="loadingFeed && !loading">
         <div class="text-center my-3" >
             <div class="spinner-border text-secondary" role="status">
                 <span class="visually-hidden">Сбор объявлений...</span>
@@ -93,9 +95,8 @@
         </div>
     </div>
 
-
     <div class="row mb-2" v-if="sid !== null">
-        <div class="col-12 mb-3">
+        <div class="col-12 mb-2">
             <div>Таблица объявлений создана и доступна для редактирования. Одна строка - одно объявление:</div>
             <p>
                 <strong><a :href="'https://docs.google.com/spreadsheets/d/'+sid" target="_blank">https://docs.google.com/spreadsheets/d/@{{sid}}</a></strong>

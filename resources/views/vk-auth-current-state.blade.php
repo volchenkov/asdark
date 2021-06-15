@@ -13,7 +13,7 @@
     @endif
 
     <div class="row">
-        <div class="col-md-6 form-group">
+        <div class="col-md-6">
             @if ($connection)
                 @if (isset($connection->data['account_id']))
                     <p> &#128076; <strong class="text-success">ВК подключен</strong></p>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-6 form-group">
+        <div class="col-md-6">
             <a href="/vk_auth" class="btn btn-primary" tabindex="-1" role="button" aria-disabled="true">{{ $connection ? 'подключить заново' : 'подключить' }}</a>
         </div>
     </div>

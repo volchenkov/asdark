@@ -3,14 +3,14 @@
 @section('content')
 @php
     $statuses = [
-        'pending'          => ['color' => 'info', 'title' => 'Ожидает'],
-        'processing'       => ['color' => 'info', 'title' => 'В работе'],
+        'pending'          => ['color' => 'info', 'title' => 'Ожидает', 'textClass' => 'text-dark'],
+        'processing'       => ['color' => 'info', 'title' => 'В работе', 'textClass' => 'text-dark'],
         'done'             => ['color' => 'success', 'title' => 'Готова'],
-        'done_with_errors' => ['color' => 'warning', 'title' => 'Завершена с ошибками'],
+        'done_with_errors' => ['color' => 'warning', 'title' => 'Завершена с ошибками', 'textClass' => 'text-dark'],
         'failed'           => ['color' => 'danger', 'title' => 'Провалена'],
-        'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча'],
-        'canceled'         => ['color' => 'muted', 'title' => 'Отменена']
-    ];
+        'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча', 'textClass' => 'text-dark'],
+        'canceled'         => ['color' => 'light', 'title' => 'Отменена', 'textClass' => 'text-dark']
+    ]
 @endphp
 <div class="row mb-2">
     <div class="col-12">
@@ -35,7 +35,7 @@
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="small text-muted">Статус</div>
-        <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}">{{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
+        <span class="px-2 py-1 badge bg-{{ $statuses[$export['status']]['color'] ?? 'default'}} {{ $statuses[$export['status']]['textClass'] ?? ''}}"> {{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
     </div>
     <div class="col-md-3">
         <div class="small text-muted">Создана</div>

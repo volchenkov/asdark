@@ -33,8 +33,8 @@
 
         <div class="col-md-8 form-group" v-if="loading">
             <div class="text-center my-3" >
-                <div class="spinner-border text-secondary" role="status" title="Загрузка кампаний из ВК">
-                    <span class="sr-only">Загрузка...</span>
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Загрузка кампаний...</span>
                 </div>
             </div>
         </div>
@@ -87,8 +87,8 @@
 
     <div class="col-md-8 form-group" v-if="loadingFeed && !loading">
         <div class="text-center my-3" >
-            <div class="spinner-border text-secondary" role="status" title="Сбор объявлений из ВК">
-                <span class="sr-only">Загрузка...</span>
+            <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">Сбор объявлений...</span>
             </div>
         </div>
     </div>

@@ -21,7 +21,7 @@
     @if(in_array($export['status'], [\App\Export::STATUS_PROCESSING]))
         <div class="text-center my-3" title="Автоматическое обновление каждые 10 секунд">
             <div class="spinner-border text-secondary" role="status">
-                <span class="sr-only">Загрузка...</span>
+                <span class="visually-hidden">Загрузка...</span>
             </div>
         </div>
     @endif

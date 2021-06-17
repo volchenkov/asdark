@@ -251,7 +251,7 @@ class AdsUploader
             $post['link_title'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
         }
         if ($current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]) {
-            $post['link_video'] = "{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+            $post['link_video'] = $current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID];
         }
 
         // В ВК разделены понятия типа кнопки и текста кнопки, однако при загрузке
@@ -279,11 +279,23 @@ class AdsUploader
         if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE])) {
             $post['link_title'] = $new[AdsFeed::COL_POST_ATTACHMENT_LINK_TITLE];
         }
-        if (isset($new[AdsFeed::COL_POST_LINK_IMAGE])) {
-            $post['link_image'] = $new[AdsFeed::COL_POST_LINK_IMAGE];
+        if (array_key_exists(AdsFeed::COL_POST_LINK_IMAGE, $new)) {
+            // дополнительная проверка для возможности заменять в постах картинки на видео,
+            // если поле картинки оставлено пустым
+            if ($new[AdsFeed::COL_POST_LINK_IMAGE]) {
+                $post['link_image'] = $new[AdsFeed::COL_POST_LINK_IMAGE];
+            } else {
+                unset($post['link_image']);
+            }
         }
-        if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID])) {
-            $post['link_video'] = "{$current[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID]}_{$new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]}";
+        if (array_key_exists(AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID, $new)) {
+            // дополнительная проверка для возможности заменять в постах видер на картинки,
+            // если поле видео оставлено пустым
+            if ($new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID]) {
+                $post['link_video'] = $new[AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID];
+            } else {
+                unset($post['link_video']);
+            }
         }
         if (isset($new[AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE])) {
             $post['link_button'] = $this->getLinkButtonByTitle(

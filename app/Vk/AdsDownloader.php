@@ -133,9 +133,9 @@ class AdsDownloader
             case AdsFeed::COL_POST_ATTACHMENT_LINK_BUTTON_TITLE:
                 return $ad['post']['attachments'][0]['link']['button']['title'] ?? null;
             case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_ID:
-                return $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
-            case AdsFeed::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID:
-                return $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
+                $videoId = $ad['post']['attachments'][0]['link']['video']['id'] ?? null;
+                $ownerId = $ad['post']['attachments'][0]['link']['video']['owner_id'] ?? null;
+                return $videoId ? "{$ownerId}_{$videoId}" : null;
 
             case AdsFeed::COL_CARD_1_TITLE:
                 return $ad['post']['attachments'][0]['pretty_cards']['cards'][0]['title'] ?? null;

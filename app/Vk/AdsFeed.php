@@ -35,7 +35,6 @@ class AdsFeed
     const COL_AD_TARGETING_COUNTRY = 'targeting_country';
     const COL_AD_TARGETING_CITIES = 'targeting_cities';
     const COL_POST_ATTACHMENT_LINK_VIDEO_ID = 'post_attachments_link_video_id';
-    const COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID = 'post_attachments_link_video_owner_id';
     const COL_POST_ATTACHMENT_CARDS = 'post_attachments_cards';
     const COL_CARD_1_TITLE = 'card_1_title';
     const COL_CARD_1_LINK_URL = 'card_1_link_url';
@@ -214,11 +213,6 @@ class AdsFeed
             'editable' => true,
             'entity'   => 'post',
             'desc'     => 'ID видео поста'
-        ],
-        self::COL_POST_ATTACHMENT_LINK_VIDEO_OWNER_ID => [
-            'editable' => false,
-            'entity'   => 'post',
-            'desc'     => 'ID владельца (группы) видео поста'
         ],
         self::COL_CARD_1_TITLE    => [
             'editable' => true,

@@ -52,7 +52,7 @@
         </div>
     @endif
 
-    <div class="col-12">
+    <div class="col-12 mt-3">
         @if(in_array($export['status'], [\App\Export::STATUS_FAILED, \App\Export::STATUS_PARTIAL_FAILURE]))
             <a href="{{ route('export.rerun', ['id' => $export['id']]) }}"
                class="btn btn-primary btn-sm me-1 mt-3"

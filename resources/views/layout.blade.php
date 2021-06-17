@@ -87,9 +87,9 @@
 <footer class="footer bg-light">
     <div class="container">
         <a href="/help"
-           class="me-3 text-muted {{ (request()->is('help*')) ? 'text-underlined' : '' }}">справка</a>
+           class="me-3 link-dark {{ (request()->is('help*')) ? 'text-underlined' : '' }}">справка</a>
         <a href="/vk_auth_current_state"
-           class="text-muted {{ (request()->is('vk_auth*')) ? 'text-underlined' : '' }}">подключение ВК</a>
+           class="link-dark {{ (request()->is('vk_auth*')) ? 'text-underlined' : '' }}">подключение ВК</a>
     </div>
 </footer>
 </body>

@@ -1,23 +1,19 @@
 @if(request()->session()->has('msg'))
-    <div class="toast"
-         role="alert"
-         aria-live="assertive"
-         aria-atomic="true"
-         data-autohide="true"
-         data-delay="5000"
-         style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-        <div class="toast-header bg-success text-light">
-            <strong class="me-auto">Успешно</strong>
-            <button type="button" class="ms-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="toast-body">
-            {{ request()->session()->get('msg') }}
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {{ request()->session()->get('msg') }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         </div>
     </div>
 @endif
 
 <script>
-    $('.toast').toast('show')
+    [].slice
+        .call(document.querySelectorAll('.toast'))
+        .map(toastEl => new bootstrap.Toast(toastEl))
+        .forEach(toast => toast.show())
 </script>

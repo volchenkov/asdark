@@ -20,9 +20,9 @@
 <table class="table table-borderless">
     @foreach($export->operations->sortBy('ad_id')->groupBy('ad_id') as $adId => $operations)
         @foreach($operations as $op)
-            <tr class="text-{{ $statuses[$op->status]['color'] }}"
-                onclick='console.log("Загрузка {{ $op->id }}", @json($op))'>
-                <td class="fit" title="{{ $statuses[$op->status]['title'] }}">
+            <tr onclick='console.log("Загрузка {{ $op->id }}", @json($op))'>
+                <td class="fit text-{{ $statuses[$op->status]['color'] }}"
+                    title="{{ $statuses[$op->status]['title'] }}">
                     <small>{!! $statuses[$op->status]['icon'] !!}</small>
                 </td>
                 <td class="fit" title="Объявление ID {{ $adId }}">
@@ -34,7 +34,7 @@
                         <strong>{{ $field }}{{ $loop->last ? '': ', ' }}</strong>
                     @endforeach
                     @if($op->error)
-                        <span title="{{$op->error }}">&#10067;</span>
+                        <div class="small text-danger"><i>{{$op->error }}</i></div>
                     @endif
                 </td>
             </tr>

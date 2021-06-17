@@ -212,7 +212,7 @@ class AdsFeed
         self::COL_POST_ATTACHMENT_LINK_VIDEO_ID       => [
             'editable' => true,
             'entity'   => 'post',
-            'desc'     => 'ID видео поста'
+            'desc'     => 'ID видео поста. Формат {ID владельца видео}_{ID ролика}. ID владельца начинается с -, если видео относится к группе'
         ],
         self::COL_CARD_1_TITLE    => [
             'editable' => true,

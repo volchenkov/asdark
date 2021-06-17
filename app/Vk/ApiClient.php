@@ -68,31 +68,36 @@ class ApiClient
     public function get(string $method, array $queryParams = [])
     {
         $query = $this->addDefaultParams($queryParams);
-        $rsp = $this->api()->get($method, ['query' => $query]);
 
-        $data = \json_decode($rsp->getBody()->getContents(), true);
+        $attempts = 5;
+        while($attempts > 0) {
+            $rsp = $this->api()->get($method, ['query' => $query]);
 
-        if (is_null($data)) {
-            throw new \RuntimeException("No response data: {$method} " . (string)$rsp->getBody());
-        }
+            $data = \json_decode($rsp->getBody()->getContents(), true);
 
-        if (isset($data['error']) && is_array($data['error'])) {
-            $error = $data['error'];
-
-            if (isset($error['error_code']) && $error['error_code'] == 9) {
-                throw new FloodControlException($error['error_msg'] ?? 'Unexpected error');
+            if (is_null($data)) {
+                throw new \RuntimeException("No response data: {$method} " . (string)$rsp->getBody());
             }
 
-            throw new ErrorResponseException($error['error_msg'] ?? 'Unexpected error');
+            if (isset($data['error']) && is_array($data['error'])) {
+                $error = $data['error'];
+
+                if (isset($error['error_code']) && $error['error_code'] == 9) {
+                    sleep(1); // flood control
+                    $attempts--;
+                    continue;
+                }
+
+                throw new ErrorResponseException($error['error_msg'] ?? 'Unexpected error');
+            }
+
+            if (!isset($data['response'])) {
+                throw new \RuntimeException("Failed to decode response: {$method}" . (string)$rsp->getBody());
+            }
+
+            return $data['response'];
         }
-
-        if (!isset($data['response'])) {
-            throw new \RuntimeException("Failed to decode response: {$method}" . (string)$rsp->getBody());
-        }
-
-        sleep(1); // anti flood
-
-        return $data['response'];
+        throw new FloodControlException($error['error_msg'] ?? 'Unexpected error');
     }
 
     /**

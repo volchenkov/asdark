@@ -27,16 +27,16 @@
                 <td title="{{ $export['updated_at'] ? 'Обновлена '.$export['updated_at']->addHours(3) : ''  }}">
                     @php
                         $statuses = [
-                            'pending'          => ['color' => 'info', 'title' => 'Ожидает'],
-                            'processing'       => ['color' => 'info', 'title' => 'В работе'],
+                            'pending'          => ['color' => 'info', 'title' => 'Ожидает', 'textClass' => 'text-dark'],
+                            'processing'       => ['color' => 'info', 'title' => 'В работе', 'textClass' => 'text-dark'],
                             'done'             => ['color' => 'success', 'title' => 'Готова'],
-                            'done_with_errors' => ['color' => 'warning', 'title' => 'Завершена с ошибками'],
+                            'done_with_errors' => ['color' => 'warning', 'title' => 'Завершена с ошибками', 'textClass' => 'text-dark'],
                             'failed'           => ['color' => 'danger', 'title' => 'Провалена'],
-                            'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча'],
-                            'canceled'         => ['color' => 'muted', 'title' => 'Отменена']
+                            'interrupted'      => ['color' => 'warning', 'title' => 'Требуется капча', 'textClass' => 'text-dark'],
+                            'canceled'         => ['color' => 'light', 'title' => 'Отменена', 'textClass' => 'text-dark']
                         ]
                     @endphp
-                    <span class="px-2 text-{{ $statuses[$export['status']]['color'] ?? 'default'}} border border-{{ $statuses[$export['status']]['color'] ?? 'default'}}"> {{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
+                    <span class="px-2 py-1 badge bg-{{ $statuses[$export['status']]['color'] ?? 'default'}} {{ $statuses[$export['status']]['textClass'] ?? ''}}"> {{ $statuses[$export['status']]['title'] ?? $export['status'] }}</span>
                 </td>
                 <td>
                     <a href="/export?export_id={{ $export['id'] }}" class="btn btn-light btn-sm" role="button">
